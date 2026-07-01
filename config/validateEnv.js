@@ -19,10 +19,46 @@ const REQUIRED_PRODUCTION = [
 ];
 
 const WEAK_DEFAULTS = new Set([
+  'REPLACE_WITH_A_LONG_RANDOM_SECRET',
+  'REPLACE_WITH_A_DIFFERENT_LONG_RANDOM_SECRET',
+  'REPLACE_WITH_A_ONE_TIME_SETUP_SECRET',
+  // older placeholder wording, kept for safety
   'change_this_to_a_long_random_string',
   'change_this_too',
   'change_this_one_time_setup_key',
 ]);
+
+function looksLikePlaceholder(value) {
+  if (!value) return false;
+  const v = value.toLowerCase();
+  return (
+    v.includes('yourdomain.com') ||
+    v.includes('your_') ||
+    v.includes('replace_with') ||
+    v.includes('<user>') ||
+    v.includes('<password>') ||
+    v.includes('<cluster>')
+  );
+}
+
+function validateMpesaAccountType() {
+  const isProd = process.env.NODE_ENV === 'production';
+  if (!isProd) return;
+
+  const accountType = (process.env.MPESA_ACCOUNT_TYPE || 'paybill').toLowerCase();
+  if (!['paybill', 'till'].includes(accountType)) {
+    console.error(`\n[STARTUP FAILED] MPESA_ACCOUNT_TYPE must be "paybill" or "till" (got "${process.env.MPESA_ACCOUNT_TYPE}").\n`);
+    process.exit(1);
+  }
+  if (accountType === 'till' && !process.env.MPESA_TILL_NUMBER) {
+    console.error('\n[STARTUP FAILED] MPESA_ACCOUNT_TYPE=till requires MPESA_TILL_NUMBER (your Buy Goods till number, e.g. 123456).\n');
+    process.exit(1);
+  }
+  if (accountType === 'till' && looksLikePlaceholder(process.env.MPESA_TILL_NUMBER)) {
+    console.error('\n[STARTUP FAILED] MPESA_TILL_NUMBER still looks like an unedited placeholder.\n');
+    process.exit(1);
+  }
+}
 
 function validateEnv() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -46,6 +82,16 @@ function validateEnv() {
     process.exit(1);
   }
 
+  if (isProd) {
+    const untouched = [...REQUIRED_ALWAYS, ...REQUIRED_PRODUCTION].filter((key) => looksLikePlaceholder(process.env[key]));
+    if (untouched.length) {
+      console.error('\n[STARTUP FAILED] These variables still look like unedited placeholders from .env.example:');
+      untouched.forEach((key) => console.error(`   - ${key} = ${process.env[key]}`));
+      console.error('\nThis usually means .env was copied from .env.example without being filled in. Fix these before deploying.\n');
+      process.exit(1);
+    }
+  }
+
   if (isProd && process.env.MPESA_ENV !== 'production') {
     console.warn('[WARN] NODE_ENV=production but MPESA_ENV is not "production" — M-Pesa is still hitting the sandbox.');
   }
@@ -54,6 +100,8 @@ function validateEnv() {
     console.error('[STARTUP FAILED] MPESA_CALLBACK_URL must be HTTPS in production (Safaricom requires it).');
     process.exit(1);
   }
+
+  validateMpesaAccountType();
 }
 
 module.exports = validateEnv;

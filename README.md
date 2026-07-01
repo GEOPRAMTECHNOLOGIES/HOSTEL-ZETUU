@@ -2,6 +2,8 @@
 
 Multi-tenant university hostel booking platform for Kenya — students browse verified hostels, see live room availability, and reserve a room with an M-Pesa STK push booking fee. Hostel landlords get their own dashboard; a platform super admin approves listings and oversees everything.
 
+**This package is configured for production by default.** `npm start` runs with `NODE_ENV=production` regardless of what's in your shell, `.env.example` ships with production defaults (`NODE_ENV=production`, `MPESA_ENV=production`), and the app refuses to boot in production if any required secret is missing or still a placeholder (see `config/validateEnv.js`). Docker and PM2 configs are included for real deployment — see **Section 9** below.
+
 ## Stack
 
 - **Backend:** Node.js, Express, MongoDB (Mongoose)
@@ -9,29 +11,36 @@ Multi-tenant university hostel booking platform for Kenya — students browse ve
 - **Payments:** M-Pesa Daraja API (STK Push / Lipa Na M-Pesa Online)
 - **Email:** Nodemailer (OTP codes, booking confirmations, admin invites)
 - **Frontend:** Vanilla HTML / CSS / JS (no build step) — served as static files by Express
-- **Security:** helmet, express-rate-limit, express-mongo-sanitize, hpp, input validation, JWT session invalidation on password change, tenant-ownership enforcement middleware
+- **Security:** helmet (strict CSP), express-rate-limit, express-mongo-sanitize, hpp, input validation, JWT session invalidation on password change, tenant-ownership enforcement middleware, boot-time env validation, graceful shutdown
 
-## 1. Install
+## 1. Install & configure for production
 
 ```bash
-npm install
+npm ci                   # installs exactly what's in package-lock.json
 cp .env.example .env
 ```
 
-Fill in `.env` with your real values (MongoDB URI, JWT secret, SMTP creds, Daraja API keys).
-
-## 2. Run locally
+Open `.env` and replace **every** placeholder with real values — your MongoDB Atlas URI, freshly generated secrets, real SMTP credentials, and your **live** M-Pesa Daraja shortcode/passkey. The app will not start until you do (see the validation checklist in Section 9).
 
 ```bash
-# make sure MongoDB is running, e.g.:
-# mongod --dbpath ./data
-
-npm run dev      # nodemon, auto-reload
-# or
-npm start
+npm start                 # NODE_ENV=production is forced by this script
 ```
 
-The app serves both the API (`/api/...`) and the frontend (`/`) on the same port (default `5000`).
+The app serves both the API (`/api/...`) and the frontend (`/`) on the same port (default `5000`). For real deployment, use Docker or PM2 behind nginx/TLS — see Section 9.
+
+## 2. Running locally in development mode
+
+Production mode expects real Mongo/SMTP/M-Pesa credentials, which you may not have while developing. To run against a local Mongo instance with relaxed validation:
+
+```bash
+# make sure MongoDB is running locally, e.g.:
+# mongod --dbpath ./data
+
+npm run dev       # forces NODE_ENV=development, nodemon auto-reload
+```
+
+In development mode, only `MONGO_URI`, `JWT_SECRET`, `COOKIE_SECRET`, and `SUPER_ADMIN_SETUP_KEY` are required — email/M-Pesa/production checks are skipped so you can build without live credentials.
+
 
 ## 3. Create the first Super Admin
 
@@ -54,10 +63,26 @@ Then log in at `/superadmin-login.html`.
 
 ## 4. M-Pesa (Daraja) setup
 
-1. Create a Safaricom Daraja app at https://developer.safaricom.co.ke and get your Consumer Key/Secret.
-2. For sandbox testing use shortcode `174379` and the sandbox passkey from the Daraja docs.
-3. Set `MPESA_CALLBACK_URL` to a **publicly reachable** HTTPS URL pointing at `/api/mpesa/callback` (use ngrok in development: `ngrok http 5000`, then set the callback to `https://<id>.ngrok.io/api/mpesa/callback`).
-4. Switch `MPESA_ENV=production` and use your live shortcode/passkey when going live.
+Hosteli Zetu supports **both** M-Pesa account types — pick the one that matches what you actually have:
+
+| | Till Number (Buy Goods) | Paybill |
+|---|---|---|
+| Typical for | Individuals, small businesses | Larger/registered organizations |
+| Customer enters | Till Number only | Paybill number + Account Number |
+| Set in `.env` | `MPESA_ACCOUNT_TYPE=till` | `MPESA_ACCOUNT_TYPE=paybill` |
+
+### Getting a Till Number
+
+If you don't have one yet: open the **M-PESA app → Lipa na M-Pesa → Buy Goods and Services → Become a Merchant** (or visit any Safaricom shop / dial `*234#`) to apply for a **Buy Goods Till Number**. Approval is usually same-day for individuals. Once approved, Safaricom gives you:
+- Your **Till Number** — the number customers see and pay to → put this in `MPESA_TILL_NUMBER`
+- An **API/Shortcode** for Lipa Na M-Pesa Online — for most individual Till accounts this is the *same number* as your Till Number, so `MPESA_SHORTCODE` and `MPESA_TILL_NUMBER` will usually match. Safaricom will tell you explicitly if they issue you a different one.
+
+### Registering with Daraja (needed either way)
+
+1. Create a Safaricom Daraja app at **https://developer.safaricom.co.ke** and get your `MPESA_CONSUMER_KEY` / `MPESA_CONSUMER_SECRET`.
+2. For **sandbox testing** before going live, use the test shortcode `174379` and the sandbox passkey published on the Daraja docs test-credentials page — set `MPESA_ENV=sandbox` and `MPESA_ACCOUNT_TYPE=paybill` for this, regardless of your real account type (the sandbox only simulates Paybill).
+3. Set `MPESA_CALLBACK_URL` to a **publicly reachable HTTPS URL** pointing at `/api/mpesa/callback` (use ngrok while developing: `ngrok http 5000`, then set the callback to `https://<id>.ngrok-free.app/api/mpesa/callback`).
+4. To go live: apply for **Go-Live** on the Daraja portal using your real Till/Paybill number, get your live `MPESA_PASSKEY` from Safaricom, then switch `MPESA_ENV=production` with your real shortcode/till number and a real HTTPS callback URL on your deployed domain.
 
 ## 5. Folder structure
 
@@ -91,7 +116,7 @@ hosteli-zetu/
 
 New hostels created by a `tenant_admin` start in `pending_review` and only appear publicly once a `super_admin` approves them from **Approvals** in the super admin dashboard.
 
-## 7. Deploying
+## 7. Quick deploy notes (any Node host)
 
 Any Node host works (Render, Railway, Fly.io, a VPS with PM2 + nginx, etc.):
 
@@ -99,7 +124,7 @@ Any Node host works (Render, Railway, Fly.io, a VPS with PM2 + nginx, etc.):
 2. Set all variables from `.env.example` in the host's environment settings.
 3. Point MongoDB at a managed cluster (e.g. MongoDB Atlas) via `MONGO_URI`.
 4. Set `MPESA_CALLBACK_URL` to your real deployed domain.
-5. Build/start command: `npm install && npm start`.
+5. Build/start command: `npm ci && npm start`.
 6. Put the app behind HTTPS (required by Safaricom for the callback URL).
 
 ## 8. Security notes
@@ -112,7 +137,7 @@ Any Node host works (Render, Railway, Fly.io, a VPS with PM2 + nginx, etc.):
 - M-Pesa callback always responds `200` immediately (per Safaricom's requirement) and verifies the payment server-side before marking a booking confirmed — the client never marks its own payment as successful.
 - On boot, `config/validateEnv.js` fails fast if required secrets are missing, or still set to the `.env.example` placeholder values, when `NODE_ENV=production`.
 
-## 9. Production deployment
+## 9. Production deployment (detailed)
 
 ### Generate real secrets
 
@@ -138,7 +163,7 @@ For a managed Mongo cluster instead of the bundled container (recommended for re
 ### Option B — PM2 on a VPS
 
 ```bash
-npm install --omit=dev
+npm ci --omit=dev
 cp .env.example .env   # fill in production values
 npm install -g pm2
 mkdir -p logs
@@ -152,7 +177,7 @@ Put nginx in front of it using `deploy/nginx.conf.example` as a starting point (
 ### Option C — Render / Railway / Fly.io
 
 1. Push this repo to GitHub.
-2. Create a new Web Service pointing at it. Build command: `npm install`. Start command: `npm start`.
+2. Create a new Web Service pointing at it. Build command: `npm ci`. Start command: `npm start`.
 3. Add every variable from `.env.example` in the platform's environment settings, with real production values.
 4. Point `MONGO_URI` at MongoDB Atlas (these platforms don't run stateful databases well themselves).
 5. Once deployed, set `MPESA_CALLBACK_URL` to `https://<your-app>.onrender.com/api/mpesa/callback` (or your custom domain) and update it in your Safaricom Daraja app config too.
@@ -163,6 +188,7 @@ Put nginx in front of it using `deploy/nginx.conf.example` as a starting point (
 - [ ] All secrets regenerated (not the `.env.example` placeholders) — the app refuses to boot otherwise
 - [ ] `MONGO_URI` points at a real, backed-up database (Atlas or a self-managed replica set)
 - [ ] `MPESA_ENV=production` with your live shortcode/passkey, and `MPESA_CALLBACK_URL` is a real HTTPS URL
+- [ ] `MPESA_ACCOUNT_TYPE` matches what you actually have (`till` for Buy Goods, `paybill` otherwise), and `MPESA_TILL_NUMBER` is set if using Till
 - [ ] SMTP credentials are for a real mailbox (not a personal Gmail password — use an app password or a transactional provider)
 - [ ] TLS/HTTPS is terminated in front of the app (nginx, or your platform's built-in TLS)
 - [ ] `/api/health` is wired into your host's or process manager's health checks

@@ -44,6 +44,16 @@ const normalizePhone = (phone) => {
 
 /**
  * Initiates an STK push (Lipa Na M-Pesa Online) for a booking fee.
+ *
+ * Supports both M-Pesa account types via MPESA_ACCOUNT_TYPE:
+ *   - 'paybill' (default): TransactionType = CustomerPayBillOnline, PartyB = MPESA_SHORTCODE.
+ *     AccountReference shows up on your paybill statement.
+ *   - 'till': TransactionType = CustomerBuyGoodsOnline, PartyB = MPESA_TILL_NUMBER
+ *     (the customer-facing Till/Buy Goods number). MPESA_SHORTCODE is still used for
+ *     the OAuth password — Safaricom sometimes issues a separate API shortcode for a
+ *     Till at registration; if yours is the same as the Till number, just set both
+ *     env vars to that same value.
+ *
  * Returns Safaricom's response containing CheckoutRequestID for tracking.
  */
 const initiateStkPush = async ({ phone, amount, accountReference, description }) => {
@@ -53,14 +63,17 @@ const initiateStkPush = async ({ phone, amount, accountReference, description })
     `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
   ).toString('base64');
 
+  const isTill = (process.env.MPESA_ACCOUNT_TYPE || 'paybill').toLowerCase() === 'till';
+  const partyB = isTill ? (process.env.MPESA_TILL_NUMBER || process.env.MPESA_SHORTCODE) : process.env.MPESA_SHORTCODE;
+
   const payload = {
     BusinessShortCode: process.env.MPESA_SHORTCODE,
     Password: password,
     Timestamp: timestamp,
-    TransactionType: 'CustomerPayBillOnline',
+    TransactionType: isTill ? 'CustomerBuyGoodsOnline' : 'CustomerPayBillOnline',
     Amount: Math.round(amount),
     PartyA: normalizePhone(phone),
-    PartyB: process.env.MPESA_SHORTCODE,
+    PartyB: partyB,
     PhoneNumber: normalizePhone(phone),
     CallBackURL: process.env.MPESA_CALLBACK_URL,
     AccountReference: accountReference.slice(0, 12),
