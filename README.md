@@ -2,8 +2,6 @@
 
 Multi-tenant university hostel booking platform for Kenya — students browse verified hostels, see live room availability, and reserve a room with an M-Pesa STK push booking fee. Hostel landlords get their own dashboard; a platform super admin approves listings and oversees everything.
 
-**This package is configured for production by default.** `npm start` runs with `NODE_ENV=production` regardless of what's in your shell, `.env.example` ships with production defaults (`NODE_ENV=production`, `MPESA_ENV=production`), and the app refuses to boot in production if any required secret is missing or still a placeholder (see `config/validateEnv.js`). Docker and PM2 configs are included for real deployment — see **Section 9** below.
-
 ## Stack
 
 - **Backend:** Node.js, Express, MongoDB (Mongoose)
@@ -11,36 +9,29 @@ Multi-tenant university hostel booking platform for Kenya — students browse ve
 - **Payments:** M-Pesa Daraja API (STK Push / Lipa Na M-Pesa Online)
 - **Email:** Nodemailer (OTP codes, booking confirmations, admin invites)
 - **Frontend:** Vanilla HTML / CSS / JS (no build step) — served as static files by Express
-- **Security:** helmet (strict CSP), express-rate-limit, express-mongo-sanitize, hpp, input validation, JWT session invalidation on password change, tenant-ownership enforcement middleware, boot-time env validation, graceful shutdown
+- **Security:** helmet, express-rate-limit, express-mongo-sanitize, hpp, input validation, JWT session invalidation on password change, tenant-ownership enforcement middleware
 
-## 1. Install & configure for production
+## 1. Install
 
 ```bash
-npm ci                   # installs exactly what's in package-lock.json
+npm install
 cp .env.example .env
 ```
 
-Open `.env` and replace **every** placeholder with real values — your MongoDB Atlas URI, freshly generated secrets, real SMTP credentials, and your **live** M-Pesa Daraja shortcode/passkey. The app will not start until you do (see the validation checklist in Section 9).
+Fill in `.env` with your real values (MongoDB URI, JWT secret, SMTP creds, Daraja API keys).
+
+## 2. Run locally
 
 ```bash
-npm start                 # NODE_ENV=production is forced by this script
-```
-
-The app serves both the API (`/api/...`) and the frontend (`/`) on the same port (default `5000`). For real deployment, use Docker or PM2 behind nginx/TLS — see Section 9.
-
-## 2. Running locally in development mode
-
-Production mode expects real Mongo/SMTP/M-Pesa credentials, which you may not have while developing. To run against a local Mongo instance with relaxed validation:
-
-```bash
-# make sure MongoDB is running locally, e.g.:
+# make sure MongoDB is running, e.g.:
 # mongod --dbpath ./data
 
-npm run dev       # forces NODE_ENV=development, nodemon auto-reload
+npm run dev      # nodemon, auto-reload
+# or
+npm start
 ```
 
-In development mode, only `MONGO_URI`, `JWT_SECRET`, `COOKIE_SECRET`, and `SUPER_ADMIN_SETUP_KEY` are required — email/M-Pesa/production checks are skipped so you can build without live credentials.
-
+The app serves both the API (`/api/...`) and the frontend (`/`) on the same port (default `5000`).
 
 ## 3. Create the first Super Admin
 
@@ -63,26 +54,10 @@ Then log in at `/superadmin-login.html`.
 
 ## 4. M-Pesa (Daraja) setup
 
-Hosteli Zetu supports **both** M-Pesa account types — pick the one that matches what you actually have:
-
-| | Till Number (Buy Goods) | Paybill |
-|---|---|---|
-| Typical for | Individuals, small businesses | Larger/registered organizations |
-| Customer enters | Till Number only | Paybill number + Account Number |
-| Set in `.env` | `MPESA_ACCOUNT_TYPE=till` | `MPESA_ACCOUNT_TYPE=paybill` |
-
-### Getting a Till Number
-
-If you don't have one yet: open the **M-PESA app → Lipa na M-Pesa → Buy Goods and Services → Become a Merchant** (or visit any Safaricom shop / dial `*234#`) to apply for a **Buy Goods Till Number**. Approval is usually same-day for individuals. Once approved, Safaricom gives you:
-- Your **Till Number** — the number customers see and pay to → put this in `MPESA_TILL_NUMBER`
-- An **API/Shortcode** for Lipa Na M-Pesa Online — for most individual Till accounts this is the *same number* as your Till Number, so `MPESA_SHORTCODE` and `MPESA_TILL_NUMBER` will usually match. Safaricom will tell you explicitly if they issue you a different one.
-
-### Registering with Daraja (needed either way)
-
-1. Create a Safaricom Daraja app at **https://developer.safaricom.co.ke** and get your `MPESA_CONSUMER_KEY` / `MPESA_CONSUMER_SECRET`.
-2. For **sandbox testing** before going live, use the test shortcode `174379` and the sandbox passkey published on the Daraja docs test-credentials page — set `MPESA_ENV=sandbox` and `MPESA_ACCOUNT_TYPE=paybill` for this, regardless of your real account type (the sandbox only simulates Paybill).
-3. Set `MPESA_CALLBACK_URL` to a **publicly reachable HTTPS URL** pointing at `/api/mpesa/callback` (use ngrok while developing: `ngrok http 5000`, then set the callback to `https://<id>.ngrok-free.app/api/mpesa/callback`).
-4. To go live: apply for **Go-Live** on the Daraja portal using your real Till/Paybill number, get your live `MPESA_PASSKEY` from Safaricom, then switch `MPESA_ENV=production` with your real shortcode/till number and a real HTTPS callback URL on your deployed domain.
+1. Create a Safaricom Daraja app at https://developer.safaricom.co.ke and get your Consumer Key/Secret.
+2. For sandbox testing use shortcode `174379` and the sandbox passkey from the Daraja docs.
+3. Set `MPESA_CALLBACK_URL` to a **publicly reachable** HTTPS URL pointing at `/api/mpesa/callback` (use ngrok in development: `ngrok http 5000`, then set the callback to `https://<id>.ngrok.io/api/mpesa/callback`).
+4. Switch `MPESA_ENV=production` and use your live shortcode/passkey when going live.
 
 ## 5. Folder structure
 
@@ -116,7 +91,7 @@ hosteli-zetu/
 
 New hostels created by a `tenant_admin` start in `pending_review` and only appear publicly once a `super_admin` approves them from **Approvals** in the super admin dashboard.
 
-## 7. Quick deploy notes (any Node host)
+## 7. Deploying
 
 Any Node host works (Render, Railway, Fly.io, a VPS with PM2 + nginx, etc.):
 
@@ -124,7 +99,7 @@ Any Node host works (Render, Railway, Fly.io, a VPS with PM2 + nginx, etc.):
 2. Set all variables from `.env.example` in the host's environment settings.
 3. Point MongoDB at a managed cluster (e.g. MongoDB Atlas) via `MONGO_URI`.
 4. Set `MPESA_CALLBACK_URL` to your real deployed domain.
-5. Build/start command: `npm ci && npm start`.
+5. Build/start command: `npm install && npm start`.
 6. Put the app behind HTTPS (required by Safaricom for the callback URL).
 
 ## 8. Security notes
@@ -135,63 +110,3 @@ Any Node host works (Render, Railway, Fly.io, a VPS with PM2 + nginx, etc.):
 - Rate limiting on login, OTP requests, and M-Pesa initiation to prevent abuse.
 - `express-mongo-sanitize` + `hpp` guard against NoSQL injection and parameter pollution.
 - M-Pesa callback always responds `200` immediately (per Safaricom's requirement) and verifies the payment server-side before marking a booking confirmed — the client never marks its own payment as successful.
-- On boot, `config/validateEnv.js` fails fast if required secrets are missing, or still set to the `.env.example` placeholder values, when `NODE_ENV=production`.
-
-## 9. Production deployment (detailed)
-
-### Generate real secrets
-
-Never ship with the placeholder values from `.env.example`. Generate strong ones:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-```
-
-Run that three times for `JWT_SECRET`, `COOKIE_SECRET`, and `SUPER_ADMIN_SETUP_KEY`.
-
-### Option A — Docker (recommended)
-
-```bash
-cp .env.example .env   # fill in real production values, including MPESA_ENV=production
-docker compose up -d --build
-```
-
-This runs the app plus a MongoDB container with a persistent volume, restart policies, and health checks. Put the app behind a TLS-terminating reverse proxy (see `deploy/nginx.conf.example`) or your platform's managed load balancer.
-
-For a managed Mongo cluster instead of the bundled container (recommended for real production traffic), just remove the `mongo` service from `docker-compose.yml` and set `MONGO_URI` in `.env` to your MongoDB Atlas connection string.
-
-### Option B — PM2 on a VPS
-
-```bash
-npm ci --omit=dev
-cp .env.example .env   # fill in production values
-npm install -g pm2
-mkdir -p logs
-npm run pm2:start      # runs in cluster mode across CPU cores, auto-restarts on crash
-pm2 save
-pm2 startup            # follow the printed instructions to start PM2 on server boot
-```
-
-Put nginx in front of it using `deploy/nginx.conf.example` as a starting point (fill in your domain and TLS cert paths — `certbot --nginx` handles issuance/renewal on Ubuntu/Debian).
-
-### Option C — Render / Railway / Fly.io
-
-1. Push this repo to GitHub.
-2. Create a new Web Service pointing at it. Build command: `npm ci`. Start command: `npm start`.
-3. Add every variable from `.env.example` in the platform's environment settings, with real production values.
-4. Point `MONGO_URI` at MongoDB Atlas (these platforms don't run stateful databases well themselves).
-5. Once deployed, set `MPESA_CALLBACK_URL` to `https://<your-app>.onrender.com/api/mpesa/callback` (or your custom domain) and update it in your Safaricom Daraja app config too.
-
-### Production checklist
-
-- [ ] `NODE_ENV=production` set in the environment
-- [ ] All secrets regenerated (not the `.env.example` placeholders) — the app refuses to boot otherwise
-- [ ] `MONGO_URI` points at a real, backed-up database (Atlas or a self-managed replica set)
-- [ ] `MPESA_ENV=production` with your live shortcode/passkey, and `MPESA_CALLBACK_URL` is a real HTTPS URL
-- [ ] `MPESA_ACCOUNT_TYPE` matches what you actually have (`till` for Buy Goods, `paybill` otherwise), and `MPESA_TILL_NUMBER` is set if using Till
-- [ ] SMTP credentials are for a real mailbox (not a personal Gmail password — use an app password or a transactional provider)
-- [ ] TLS/HTTPS is terminated in front of the app (nginx, or your platform's built-in TLS)
-- [ ] `/api/health` is wired into your host's or process manager's health checks
-- [ ] First super admin created via `/api/setup/super-admin`, then treat `SUPER_ADMIN_SETUP_KEY` as compromised-if-leaked and rotate it
-- [ ] Regular MongoDB backups configured (Atlas does this automatically on paid tiers)
-
