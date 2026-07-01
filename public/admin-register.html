@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register Your Hostel — Hosteli Zetu</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  body { background: var(--cream); }
+  .reg-wrap { min-height: 100vh; padding: 40px 24px 80px; }
+  .reg-shell { max-width: 640px; margin: 0 auto; }
+  .reg-shell > .brand { justify-content: center; margin-bottom: 6px; color: var(--forest-dark); }
+  .reg-sub { text-align: center; margin-bottom: 28px; }
+
+  .progress-track { display: flex; align-items: center; gap: 6px; margin-bottom: 30px; }
+  .progress-step { flex: 1; height: 6px; border-radius: 999px; background: var(--line); transition: background .25s; }
+  .progress-step.done, .progress-step.active { background: var(--forest); }
+  .progress-labels { display: flex; justify-content: space-between; font-size: .7rem; color: var(--ink-soft); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+
+  .reg-card { background: #fff; border-radius: var(--r-lg); padding: 34px; box-shadow: var(--shadow-lg); }
+  .reg-card h2 { margin-bottom: 4px; }
+  .reg-card .step-hint { margin-bottom: 24px; }
+
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 520px) { .field-row { grid-template-columns: 1fr; } }
+
+  .amenity-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 18px; }
+  @media (max-width: 520px) { .amenity-grid { grid-template-columns: 1fr; } }
+  .amenity-opt { display: flex; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 12px; font-size: .86rem; cursor: pointer; user-select: none; }
+  .amenity-opt input { width: 16px; height: 16px; accent-color: var(--forest); }
+  .amenity-opt.checked { border-color: var(--forest); background: rgba(27,67,50,.05); }
+
+  .rules-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
+  .rules-list .rule-row { display: flex; gap: 8px; }
+  .rules-list .rule-row input { flex: 1; }
+  .rules-list .rule-row button { border: none; background: var(--cream-dark); color: var(--ink-soft); border-radius: var(--r-sm); width: 38px; cursor: pointer; }
+
+  .review-block { margin-bottom: 18px; }
+  .review-block h4 { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); margin-bottom: 8px; }
+  .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; font-size: .88rem; }
+  .review-grid dt { color: var(--ink-soft); }
+  .review-grid dd { margin: 0; font-weight: 600; }
+
+  .step-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; gap: 12px; }
+  .step-actions .spacer { flex: 1; }
+
+  .success-panel { text-align: center; padding: 20px 0; }
+  .success-panel .ic { font-size: 2.6rem; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="reg-wrap">
+  <div class="reg-shell">
+    <a href="/" class="brand"><span class="mark">HZ</span>Hosteli Zetu</a>
+    <p class="muted reg-sub">List your hostel in a few quick steps</p>
+
+    <div class="progress-labels" id="progressLabels"></div>
+    <div class="progress-track" id="progressTrack"></div>
+
+    <div class="reg-card">
+      <form id="regForm">
+
+        <!-- Step 1: Your details -->
+        <section class="step-panel active" data-step="0">
+          <h2>Your details</h2>
+          <p class="muted step-hint">Tell us who's managing this hostel. This becomes your admin login.</p>
+          <div class="field"><label>Full name</label><input type="text" id="ownerName" required></div>
+          <div class="field-row">
+            <div class="field"><label>Email</label><input type="email" id="ownerEmail" required></div>
+            <div class="field"><label>Phone number</label><input type="tel" id="ownerPhone" placeholder="07XX XXX XXX" required></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Password</label><input type="password" id="ownerPassword" minlength="8" required></div>
+            <div class="field"><label>Confirm password</label><input type="password" id="ownerPasswordConfirm" minlength="8" required></div>
+          </div>
+          <p class="error-text" id="step0Error" style="display:none;color:var(--danger);font-size:.84rem;"></p>
+        </section>
+
+        <!-- Step 2: Hostel basics -->
+        <section class="step-panel" data-step="1">
+          <h2>Hostel basics</h2>
+          <p class="muted step-hint">The essentials students will see first.</p>
+          <div class="field"><label>Hostel name</label><input type="text" id="hName" required></div>
+          <div class="field-row">
+            <div class="field"><label>University it serves</label><input type="text" id="hUniversity" placeholder="e.g. University of Nairobi" required></div>
+            <div class="field">
+              <label>Who is it for?</label>
+              <select id="hGender">
+                <option value="mixed">Mixed</option>
+                <option value="male">Male only</option>
+                <option value="female">Female only</option>
+              </select>
+            </div>
+          </div>
+          <div class="field"><label>Short tagline <span class="muted" style="font-weight:400;">(optional, max 140 chars)</span></label><input type="text" id="hTagline" maxlength="140" placeholder="e.g. Secure, self-contained rooms 5 min from campus"></div>
+          <div class="field"><label>Description <span class="muted" style="font-weight:400;">(optional)</span></label><textarea id="hDescription" rows="4" placeholder="Tell students what makes this hostel a good place to live"></textarea></div>
+          <p class="error-text" id="step1Error" style="display:none;color:var(--danger);font-size:.84rem;"></p>
+        </section>
+
+        <!-- Step 3: Location -->
+        <section class="step-panel" data-step="2">
+          <h2>Location</h2>
+          <p class="muted step-hint">Where students will find you.</p>
+          <div class="field"><label>Physical address</label><input type="text" id="hAddress" placeholder="Street / plot / landmark" required></div>
+          <div class="field-row">
+            <div class="field"><label>Area <span class="muted" style="font-weight:400;">(optional)</span></label><input type="text" id="hArea" placeholder="e.g. Kikuyu, near Main Gate"></div>
+            <div class="field"><label>City</label><input type="text" id="hCity" value="Nairobi"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>County <span class="muted" style="font-weight:400;">(optional)</span></label><input type="text" id="hCounty"></div>
+            <div class="field"><label>Distance from campus <span class="muted" style="font-weight:400;">(optional)</span></label><input type="text" id="hDistance" placeholder="e.g. 5 min walk"></div>
+          </div>
+          <p class="error-text" id="step2Error" style="display:none;color:var(--danger);font-size:.84rem;"></p>
+        </section>
+
+        <!-- Step 4: Contact, amenities & rules -->
+        <section class="step-panel" data-step="3">
+          <h2>Contact, amenities & rules</h2>
+          <p class="muted step-hint">Help students know what to expect and how to reach you.</p>
+          <div class="field-row">
+            <div class="field"><label>Hostel contact phone</label><input type="tel" id="cPhone" required></div>
+            <div class="field"><label>WhatsApp <span class="muted" style="font-weight:400;">(optional)</span></label><input type="tel" id="cWhatsapp"></div>
+          </div>
+          <div class="field"><label>Hostel contact email <span class="muted" style="font-weight:400;">(optional, defaults to your login email)</span></label><input type="email" id="cEmail"></div>
+
+          <div class="field"><label>Amenities</label></div>
+          <div class="amenity-grid" id="amenityGrid"></div>
+
+          <div class="field"><label>House rules <span class="muted" style="font-weight:400;">(optional)</span></label></div>
+          <div class="rules-list" id="rulesList"></div>
+          <button type="button" class="btn btn-outline btn-sm" id="addRuleBtn" style="margin-bottom:18px;">+ Add a rule</button>
+
+          <div class="field" style="max-width:220px;"><label>Standard check-in time</label><input type="text" id="hCheckIn" value="12:00 PM"></div>
+          <p class="error-text" id="step3Error" style="display:none;color:var(--danger);font-size:.84rem;"></p>
+        </section>
+
+        <!-- Step 5: Review & submit -->
+        <section class="step-panel" data-step="4">
+          <h2>Review & submit</h2>
+          <p class="muted step-hint">Check everything looks right, then submit for review.</p>
+          <div id="reviewContent"></div>
+          <p class="error-text" id="step4Error" style="display:none;color:var(--danger);font-size:.84rem;"></p>
+        </section>
+
+        <!-- Success -->
+        <section class="step-panel" data-step="5">
+          <div class="success-panel">
+            <div class="ic">✅</div>
+            <h2>You're all set</h2>
+            <p class="muted">Your registration has been received. Our team will review your hostel and email you once your account and listing are approved.</p>
+            <a href="/" class="btn btn-dark" style="margin-top:10px;display:inline-flex;">Back to homepage</a>
+          </div>
+        </section>
+
+        <div class="step-actions" id="stepActions">
+          <button type="button" class="btn btn-outline" id="backBtn">← Back</button>
+          <div class="spacer"></div>
+          <button type="button" class="btn btn-dark" id="nextBtn">Continue →</button>
+          <button type="submit" class="btn btn-gold" id="submitBtn" style="display:none;">Submit registration</button>
+        </div>
+      </form>
+    </div>
+
+    <p class="muted text-center" style="font-size:.78rem;margin-top:20px;">Already registered? <a href="/admin-login.html" style="color:var(--forest);font-weight:600;">Sign in →</a></p>
+  </div>
+</div>
+
+<script src="/js/core.js"></script>
+<script src="/js/admin-register.js"></script>
+</body>
+</html>

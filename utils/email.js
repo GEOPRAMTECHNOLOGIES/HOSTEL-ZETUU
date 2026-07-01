@@ -96,4 +96,43 @@ const sendAdminWelcomeEmail = async (toEmail, name, tempPassword) => {
   });
 };
 
-module.exports = { sendOtpEmail, sendBookingConfirmationEmail, sendAdminWelcomeEmail };
+const sendAdminRegistrationReceivedEmail = async (toEmail, name, hostelName) => {
+  const html = baseWrapper(
+    `Thanks for registering, ${name}`,
+    `
+      <p style="color:#444;font-size:14px;">We've received your hostel registration for <strong>${hostelName}</strong>.</p>
+      <p style="color:#444;font-size:13px;">Our team reviews every new listing before it goes live. You'll get an email as soon as your account and hostel are approved — usually within 1-2 business days.</p>
+      <p style="color:#888;font-size:12px;">You don't need to do anything else right now.</p>
+    `
+  );
+  await getTransporter().sendMail({
+    from: process.env.EMAIL_FROM,
+    to: toEmail,
+    subject: 'We got your Hosteli Zetu registration',
+    html,
+  });
+};
+
+const sendAdminApprovedEmail = async (toEmail, name) => {
+  const html = baseWrapper(
+    `You're approved, ${name} 🎉`,
+    `
+      <p style="color:#444;font-size:14px;">Your Hosteli Zetu admin account has been activated. You can now log in and finish setting up your hostel and rooms.</p>
+      <p style="color:#888;font-size:12px;">Log in with the email and password you registered with.</p>
+    `
+  );
+  await getTransporter().sendMail({
+    from: process.env.EMAIL_FROM,
+    to: toEmail,
+    subject: 'Your Hosteli Zetu account is approved',
+    html,
+  });
+};
+
+module.exports = {
+  sendOtpEmail,
+  sendBookingConfirmationEmail,
+  sendAdminWelcomeEmail,
+  sendAdminRegistrationReceivedEmail,
+  sendAdminApprovedEmail,
+};

@@ -69,3 +69,62 @@ function deviceFingerprint() {
 function statusLabel(s) {
   return (s || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+/* ---------------------------------------------------------------------------
+   Hidden super admin entry point.
+   The public site has no visible "Super admin" link anywhere. Platform staff
+   reach the login screen by clicking the "Hosteli Zetu" brand/logo 9 times
+   in a row (wherever it appears — navbar, footer, etc). A single click still
+   behaves like a normal link after a short pause, so it doesn't break normal
+   navigation for everyday visitors.
+--------------------------------------------------------------------------- */
+(function initSecretSuperAdminAccess() {
+  const CLICKS_REQUIRED = 9;
+  const RESET_MS = 1600;
+  let count = 0;
+  let resetTimer = null;
+  let navTimer = null;
+
+  function bind(el) {
+    if (el.dataset.hzSecretBound) return;
+    el.dataset.hzSecretBound = '1';
+
+    const fallbackHref = el.tagName === 'A' ? (el.getAttribute('href') || '/') : null;
+
+    el.addEventListener('click', (e) => {
+      if (fallbackHref !== null) e.preventDefault();
+
+      count += 1;
+      clearTimeout(resetTimer);
+      clearTimeout(navTimer);
+
+      if (count >= CLICKS_REQUIRED) {
+        count = 0;
+        window.location.href = '/superadmin-login.html';
+        return;
+      }
+
+      resetTimer = setTimeout(() => {
+        count = 0;
+      }, RESET_MS);
+
+      // Give normal visitors their expected click-through, just slightly
+      // deferred so we can tell a single click apart from the secret pattern.
+      if (fallbackHref !== null) {
+        navTimer = setTimeout(() => {
+          window.location.href = fallbackHref;
+        }, RESET_MS);
+      }
+    });
+  }
+
+  function attachAll() {
+    document.querySelectorAll('.brand').forEach(bind);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachAll);
+  } else {
+    attachAll();
+  }
+})();

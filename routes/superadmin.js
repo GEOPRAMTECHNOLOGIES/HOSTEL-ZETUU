@@ -8,7 +8,7 @@ const Student = require('../models/Student');
 const { Payment, Review } = require('../models/misc');
 const { protectAdmin, requireRole } = require('../middleware/auth');
 const { randomPassword } = require('../utils/helpers');
-const { sendAdminWelcomeEmail } = require('../utils/email');
+const { sendAdminWelcomeEmail, sendAdminApprovedEmail } = require('../utils/email');
 
 const router = express.Router();
 router.use(protectAdmin, requireRole('super_admin'));
@@ -209,8 +209,18 @@ router.post(
 // PUT /api/superadmin/admins/:id/status — activate / suspend a tenant admin
 router.put('/admins/:id/status', [body('status').isIn(['active', 'suspended', 'pending'])], validate, async (req, res, next) => {
   try {
+    const before = await Admin.findById(req.params.id).select('status');
+    if (!before) return res.status(404).json({ success: false, message: 'Admin not found.' });
+
     const admin = await Admin.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
-    if (!admin) return res.status(404).json({ success: false, message: 'Admin not found.' });
+
+    // Newly approved self-registration — let them know they can log in now.
+    if (before.status === 'pending' && req.body.status === 'active') {
+      sendAdminApprovedEmail(admin.email, admin.name).catch((e) =>
+        console.error('[EMAIL] admin approved notice failed:', e.message)
+      );
+    }
+
     res.json({ success: true, admin });
   } catch (err) {
     next(err);

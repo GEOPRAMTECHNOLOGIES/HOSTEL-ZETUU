@@ -21,4 +21,7 @@ const mpesaLimiter = makeLimiter(5 * 60 * 1000, 6, 'Too many payment attempts. P
 // General API limiter
 const apiLimiter = makeLimiter(15 * 60 * 1000, 300, 'Too many requests. Please slow down.');
 
-module.exports = { loginLimiter, otpLimiter, mpesaLimiter, apiLimiter };
+// Hostel admin self-registration — prevents spam/duplicate submissions
+const registerLimiter = makeLimiter(60 * 60 * 1000, 5, 'Too many registration attempts. Try again in an hour.');
+
+module.exports = { loginLimiter, otpLimiter, mpesaLimiter, apiLimiter, registerLimiter };
