@@ -31,7 +31,6 @@ const studentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-studentSchema.index({ email: 1 });
 studentSchema.index({ phone: 1 });
 
 module.exports = mongoose.model('Student', studentSchema);

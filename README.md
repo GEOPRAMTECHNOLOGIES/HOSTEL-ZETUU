@@ -110,3 +110,62 @@ Any Node host works (Render, Railway, Fly.io, a VPS with PM2 + nginx, etc.):
 - Rate limiting on login, OTP requests, and M-Pesa initiation to prevent abuse.
 - `express-mongo-sanitize` + `hpp` guard against NoSQL injection and parameter pollution.
 - M-Pesa callback always responds `200` immediately (per Safaricom's requirement) and verifies the payment server-side before marking a booking confirmed — the client never marks its own payment as successful.
+- On boot, `config/validateEnv.js` fails fast if required secrets are missing, or still set to the `.env.example` placeholder values, when `NODE_ENV=production`.
+
+## 9. Production deployment
+
+### Generate real secrets
+
+Never ship with the placeholder values from `.env.example`. Generate strong ones:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+Run that three times for `JWT_SECRET`, `COOKIE_SECRET`, and `SUPER_ADMIN_SETUP_KEY`.
+
+### Option A — Docker (recommended)
+
+```bash
+cp .env.example .env   # fill in real production values, including MPESA_ENV=production
+docker compose up -d --build
+```
+
+This runs the app plus a MongoDB container with a persistent volume, restart policies, and health checks. Put the app behind a TLS-terminating reverse proxy (see `deploy/nginx.conf.example`) or your platform's managed load balancer.
+
+For a managed Mongo cluster instead of the bundled container (recommended for real production traffic), just remove the `mongo` service from `docker-compose.yml` and set `MONGO_URI` in `.env` to your MongoDB Atlas connection string.
+
+### Option B — PM2 on a VPS
+
+```bash
+npm install --omit=dev
+cp .env.example .env   # fill in production values
+npm install -g pm2
+mkdir -p logs
+npm run pm2:start      # runs in cluster mode across CPU cores, auto-restarts on crash
+pm2 save
+pm2 startup            # follow the printed instructions to start PM2 on server boot
+```
+
+Put nginx in front of it using `deploy/nginx.conf.example` as a starting point (fill in your domain and TLS cert paths — `certbot --nginx` handles issuance/renewal on Ubuntu/Debian).
+
+### Option C — Render / Railway / Fly.io
+
+1. Push this repo to GitHub.
+2. Create a new Web Service pointing at it. Build command: `npm install`. Start command: `npm start`.
+3. Add every variable from `.env.example` in the platform's environment settings, with real production values.
+4. Point `MONGO_URI` at MongoDB Atlas (these platforms don't run stateful databases well themselves).
+5. Once deployed, set `MPESA_CALLBACK_URL` to `https://<your-app>.onrender.com/api/mpesa/callback` (or your custom domain) and update it in your Safaricom Daraja app config too.
+
+### Production checklist
+
+- [ ] `NODE_ENV=production` set in the environment
+- [ ] All secrets regenerated (not the `.env.example` placeholders) — the app refuses to boot otherwise
+- [ ] `MONGO_URI` points at a real, backed-up database (Atlas or a self-managed replica set)
+- [ ] `MPESA_ENV=production` with your live shortcode/passkey, and `MPESA_CALLBACK_URL` is a real HTTPS URL
+- [ ] SMTP credentials are for a real mailbox (not a personal Gmail password — use an app password or a transactional provider)
+- [ ] TLS/HTTPS is terminated in front of the app (nginx, or your platform's built-in TLS)
+- [ ] `/api/health` is wired into your host's or process manager's health checks
+- [ ] First super admin created via `/api/setup/super-admin`, then treat `SUPER_ADMIN_SETUP_KEY` as compromised-if-leaked and rotate it
+- [ ] Regular MongoDB backups configured (Atlas does this automatically on paid tiers)
+
