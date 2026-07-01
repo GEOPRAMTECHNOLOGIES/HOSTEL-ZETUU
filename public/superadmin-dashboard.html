@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Admin — Hosteli Zetu</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="dash">
+  <aside class="dash-sidebar" id="sidebar">
+    <div class="brand"><span class="mark">HZ</span>Hosteli Zetu<small>Platform Control</small></div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Overview</div>
+      <a href="#overview" class="nav-link active" data-view="overview"><span class="ic">📊</span> Dashboard</a>
+      <div class="dash-nav-label">Platform</div>
+      <a href="#hostels" class="nav-link" data-view="hostels"><span class="ic">🏠</span> All Hostels</a>
+      <a href="#approvals" class="nav-link" data-view="approvals"><span class="ic">✅</span> Approvals <span id="approvalBadge"></span></a>
+      <a href="#admins" class="nav-link" data-view="admins"><span class="ic">👥</span> Tenant Admins</a>
+      <a href="#reviews" class="nav-link" data-view="reviews"><span class="ic">⭐</span> Reviews</a>
+      <div class="dash-nav-label">Account</div>
+      <a href="#settings" class="nav-link" data-view="settings"><span class="ic">⚙️</span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" id="logoutBtn"><span class="ic">↩️</span> Log out</a>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div class="flex gap-12" style="align-items:center;">
+        <button class="dash-burger" id="burgerBtn">☰</button>
+        <h1 id="viewTitle">Dashboard</h1>
+      </div>
+      <div class="user-chip">
+        <div class="avatar" id="userAvatar">--</div>
+        <div><div class="name" id="userName">—</div><div class="role" id="userRole">—</div></div>
+      </div>
+    </div>
+    <div class="dash-content" id="viewRoot">
+      <div class="card skeleton" style="height:240px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Create tenant admin modal -->
+<div class="modal-overlay" id="adminModal" style="display:none;">
+  <div class="modal">
+    <h3>Add tenant admin</h3>
+    <p class="muted" style="font-size:.84rem;">A login will be emailed to them automatically.</p>
+    <form id="adminForm">
+      <div class="field"><label>Full name</label><input type="text" id="aName" required></div>
+      <div class="field"><label>Email</label><input type="email" id="aEmail" required></div>
+      <div class="field"><label>Phone</label><input type="tel" id="aPhone" required></div>
+      <div class="flex gap-12" style="margin-top:10px;">
+        <button type="button" class="btn btn-outline btn-block" id="closeAdminModal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-block">Create account</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Suspend hostel modal -->
+<div class="modal-overlay" id="suspendModal" style="display:none;">
+  <div class="modal">
+    <h3>Suspend hostel</h3>
+    <form id="suspendForm">
+      <div class="field"><label>Reason</label><textarea id="suspendReason" rows="3" required></textarea></div>
+      <div class="flex gap-12" style="margin-top:10px;">
+        <button type="button" class="btn btn-outline btn-block" id="closeSuspendModal">Cancel</button>
+        <button type="submit" class="btn" style="background:var(--danger);color:#fff;" class="btn-block">Suspend</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/core.js"></script>
+<script src="/js/superadmin-dashboard.js"></script>
+</body>
+</html>

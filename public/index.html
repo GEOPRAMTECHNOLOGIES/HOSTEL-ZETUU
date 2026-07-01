@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hosteli Zetu — Find Your Campus Home</title>
+<meta name="description" content="Browse verified student hostels near your university, see live room availability, and book in minutes — secured with M-Pesa.">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .hero { position: relative; overflow: hidden; background: linear-gradient(160deg, var(--forest-dark) 0%, var(--forest) 65%, #2D6A4F 100%); color: #fff; padding: 70px 0 110px; }
+  .hero::before { content:''; position:absolute; inset:0; background-image: radial-gradient(circle at 18% 20%, rgba(232,163,61,.18), transparent 40%), radial-gradient(circle at 85% 80%, rgba(231,111,81,.15), transparent 45%); }
+  .hero .container { position: relative; z-index: 2; }
+  .hero-eyebrow { font-family: var(--font-mono); font-size: .78rem; color: var(--gold-light); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .hero h1 { color: #fff; max-width: 720px; }
+  .hero h1 span { color: var(--gold-light); }
+  .hero p.lead { color: rgba(255,255,255,.78); max-width: 560px; font-size: 1.08rem; }
+  .search-card { background: #fff; border-radius: var(--r-lg); padding: 20px; box-shadow: var(--shadow-lg); margin-top: 34px; display: grid; grid-template-columns: 1.3fr 1fr 1fr auto; gap: 12px; }
+  @media (max-width: 860px) { .search-card { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 540px) { .search-card { grid-template-columns: 1fr; } }
+  .search-card .sfield label { font-size: .72rem; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; display:block; margin-bottom: 6px; }
+  .search-card .sfield input, .search-card .sfield select { width: 100%; border: none; background: var(--cream); border-radius: 10px; padding: 11px 12px; font-size: .9rem; color: var(--ink); }
+  .hero-stats { display: flex; gap: 34px; margin-top: 40px; flex-wrap: wrap; }
+  .hero-stats .s b { font-family: var(--font-display); font-size: 1.7rem; display: block; color: #fff; }
+  .hero-stats .s span { font-size: .78rem; color: rgba(255,255,255,.65); }
+
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 30px; gap: 16px; flex-wrap: wrap; }
+  .hostel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }
+  .hostel-card .thumb { height: 170px; background: linear-gradient(135deg, var(--cream-dark), var(--line)); position: relative; overflow: hidden; }
+  .hostel-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .hostel-card .thumb .badge-top { position: absolute; top: 10px; left: 10px; }
+  .hostel-card .thumb .badge-rating { position: absolute; top: 10px; right: 10px; background: rgba(15,42,32,.78); color: var(--gold-light); font-size: .74rem; font-weight: 700; padding: 4px 9px; border-radius: 999px; }
+  .hostel-card .info { padding: 16px 18px 18px; }
+  .hostel-card h3 { font-size: 1.02rem; margin-bottom: 2px; }
+  .hostel-card .uni { font-size: .8rem; color: var(--ink-soft); margin-bottom: 12px; }
+  .hostel-card .row-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .hostel-card .price-from { font-family: var(--font-mono); font-weight: 700; color: var(--forest-dark); }
+  .hostel-card .price-from small { color: var(--ink-soft); font-weight: 400; font-family: var(--font-body); }
+
+  .uni-chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 26px 0 0; }
+  .uni-chip { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); font-size: .82rem; font-weight: 600; background: #fff; }
+  .uni-chip.active { background: var(--forest-dark); color: #fff; border-color: var(--forest-dark); }
+
+  .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  @media (max-width: 780px) { .how-grid { grid-template-columns: 1fr; } }
+  .how-card { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 26px; }
+  .how-card .num { font-family: var(--font-mono); color: var(--gold); font-weight: 700; font-size: .85rem; margin-bottom: 10px; }
+
+  .cta-strip { background: var(--forest-dark); color: #fff; border-radius: var(--r-lg); padding: 46px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .cta-strip h2 { color: #fff; margin-bottom: 6px; }
+  .cta-strip p { color: rgba(255,255,255,.7); margin: 0; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="brand"><span class="mark">HZ</span><div>Hosteli Zetu<small>Your campus home, sorted</small></div></a>
+    <div class="nav-links">
+      <a href="/index.html#browse">Browse Hostels</a>
+      <a href="/track.html">Track Booking</a>
+      <a href="/admin-login.html">List Your Hostel</a>
+    </div>
+    <a href="/admin-login.html" class="btn btn-dark btn-sm">Admin Login</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <div class="hero-eyebrow"><span class="pulse-dot" style="background:var(--gold-light)"></span> Live availability across <span id="heroHostelCount">…</span> hostels</div>
+    <h1>Find your <span>campus home</span><br>before everyone else does.</h1>
+    <p class="lead">Verified student hostels near your university — real photos, real availability, and a booking fee you pay safely with M-Pesa.</p>
+
+    <form class="search-card" id="searchForm">
+      <div class="sfield">
+        <label>University</label>
+        <select id="sUniversity"><option value="">Any university</option></select>
+      </div>
+      <div class="sfield">
+        <label>Room type</label>
+        <select id="sGender">
+          <option value="">Any</option>
+          <option value="male">Male only</option>
+          <option value="female">Female only</option>
+          <option value="mixed">Mixed</option>
+        </select>
+      </div>
+      <div class="sfield">
+        <label>Max budget (KES/mo)</label>
+        <input type="number" id="sMaxPrice" placeholder="e.g. 8000">
+      </div>
+      <div class="sfield" style="display:flex;align-items:flex-end;">
+        <button class="btn btn-gold btn-block" type="submit">Search hostels</button>
+      </div>
+    </form>
+
+    <div class="hero-stats">
+      <div class="s"><b id="statHostels">—</b><span>Verified hostels</span></div>
+      <div class="s"><b id="statRooms">—</b><span>Total rooms listed</span></div>
+      <div class="s"><b id="statAvailable">—</b><span>Available right now</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="section" id="browse">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>Featured hostels</h2>
+        <p class="muted" style="margin:0;">Hand-picked, highly rated, and currently accepting bookings.</p>
+      </div>
+    </div>
+    <div class="uni-chips" id="uniChips"></div>
+    <div style="height:24px"></div>
+    <div class="hostel-grid" id="hostelGrid">
+      <div class="card skeleton" style="height:280px"></div>
+      <div class="card skeleton" style="height:280px"></div>
+      <div class="card skeleton" style="height:280px"></div>
+    </div>
+    <div class="text-center" style="margin-top:30px;">
+      <button class="btn btn-outline" id="loadMoreBtn" style="display:none;">Load more hostels</button>
+    </div>
+  </div>
+</main>
+
+<section class="section" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+  <div class="container">
+    <h2 class="text-center">How booking works</h2>
+    <p class="muted text-center" style="max-width:480px;margin:0 auto 36px;">From browsing to move-in, in three simple steps.</p>
+    <div class="how-grid">
+      <div class="how-card"><div class="num">01 / SEARCH</div><h3>Find a room you like</h3><p>Filter by university, price and gender preference. See real photos and live availability.</p></div>
+      <div class="how-card"><div class="num">02 / VERIFY</div><h3>Confirm with a one-time code</h3><p>We send a quick email code to confirm it's really you — your device stays verified for a week.</p></div>
+      <div class="how-card"><div class="num">03 / PAY & MOVE IN</div><h3>Secure it with M-Pesa</h3><p>Pay the small booking fee via STK push and get an instant confirmation with your booking reference.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta-strip">
+      <div><h2>Manage a hostel near campus?</h2><p>List your rooms on Hosteli Zetu and reach students searching right now.</p></div>
+      <a href="/admin-login.html" class="btn btn-gold">Get started as a landlord</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:30px;">
+      <div>
+        <div class="brand" style="color:#fff;margin-bottom:10px;"><span class="mark">HZ</span>Hosteli Zetu</div>
+        <p style="color:rgba(255,255,255,.6);font-size:.85rem;">The easiest way for university students in Kenya to find and book verified off-campus hostels.</p>
+      </div>
+      <div><h4>Students</h4><a href="/index.html#browse">Browse hostels</a><a href="/track.html">Track a booking</a></div>
+      <div><h4>Landlords</h4><a href="/admin-login.html">Admin login</a></div>
+      <div><h4>Platform</h4><a href="/superadmin-login.html">Super admin</a></div>
+    </div>
+    <div class="bottom"><span>© <span id="yr"></span> Hosteli Zetu. All rights reserved.</span><span>Made for Kenyan campuses 🇰🇪</span></div>
+  </div>
+</footer>
+
+<script src="/js/core.js"></script>
+<script src="/js/index.js"></script>
+</body>
+</html>

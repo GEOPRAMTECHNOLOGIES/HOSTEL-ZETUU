@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Hosteli Zetu</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="dash">
+  <aside class="dash-sidebar" id="sidebar">
+    <div class="brand"><span class="mark">HZ</span>Hosteli Zetu<small>Hostel Manager</small></div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Overview</div>
+      <a href="#overview" class="nav-link active" data-view="overview"><span class="ic">📊</span> Dashboard</a>
+      <div class="dash-nav-label">Manage</div>
+      <a href="#hostels" class="nav-link" data-view="hostels"><span class="ic">🏠</span> My Hostels</a>
+      <a href="#rooms" class="nav-link" data-view="rooms"><span class="ic">🛏️</span> Rooms</a>
+      <a href="#bookings" class="nav-link" data-view="bookings"><span class="ic">📅</span> Bookings</a>
+      <a href="#reviews" class="nav-link" data-view="reviews"><span class="ic">⭐</span> Reviews</a>
+      <div class="dash-nav-label">Account</div>
+      <a href="#settings" class="nav-link" data-view="settings"><span class="ic">⚙️</span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" id="logoutBtn"><span class="ic">↩️</span> Log out</a>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div class="flex gap-12" style="align-items:center;">
+        <button class="dash-burger" id="burgerBtn">☰</button>
+        <h1 id="viewTitle">Dashboard</h1>
+      </div>
+      <div class="user-chip">
+        <div class="avatar" id="userAvatar">--</div>
+        <div><div class="name" id="userName">—</div><div class="role" id="userRole">—</div></div>
+      </div>
+    </div>
+    <div class="dash-content" id="viewRoot">
+      <div class="card skeleton" style="height:240px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Hostel create/edit modal -->
+<div class="modal-overlay" id="hostelModal" style="display:none;">
+  <div class="modal" style="max-width:560px;">
+    <h3 id="hostelModalTitle">Add a hostel</h3>
+    <form id="hostelForm">
+      <div class="field"><label>Hostel name</label><input type="text" id="hName" required></div>
+      <div class="field"><label>University</label><input type="text" id="hUniversity" required></div>
+      <div class="field"><label>Address</label><input type="text" id="hAddress" required></div>
+      <div class="field"><label>Area / landmark</label><input type="text" id="hArea"></div>
+      <div class="field"><label>Gender</label>
+        <select id="hGender"><option value="mixed">Mixed</option><option value="male">Male only</option><option value="female">Female only</option></select>
+      </div>
+      <div class="field"><label>Booking fee (KES)</label><input type="number" id="hFee" value="500"></div>
+      <div class="field"><label>Description</label><textarea id="hDescription" rows="3"></textarea></div>
+      <div class="field"><label>Amenities (comma separated)</label><input type="text" id="hAmenities" placeholder="WiFi, CCTV, Borehole water"></div>
+      <div class="field"><label>Cover image URL</label><input type="text" id="hCover" placeholder="https://..."></div>
+      <div class="flex gap-12" style="margin-top:10px;">
+        <button type="button" class="btn btn-outline btn-block" id="closeHostelModal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-block">Save hostel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Room create/edit modal -->
+<div class="modal-overlay" id="roomModal" style="display:none;">
+  <div class="modal" style="max-width:520px;">
+    <h3 id="roomModalTitle">Add a room</h3>
+    <form id="roomForm">
+      <div class="field"><label>Hostel</label><select id="rHostel" required></select></div>
+      <div class="field"><label>Room title</label><input type="text" id="rTitle" placeholder="Single Room - Wing B" required></div>
+      <div class="field"><label>Type</label>
+        <select id="rType">
+          <option value="single">Single</option><option value="double">Double</option><option value="bedsitter">Bedsitter</option>
+          <option value="one_bedroom">One Bedroom</option><option value="shared_4">Shared (4)</option><option value="shared_6">Shared (6)</option><option value="studio">Studio</option>
+        </select>
+      </div>
+      <div class="input-row">
+        <div class="field" style="flex:1;"><label>Price / month (KES)</label><input type="number" id="rPrice" required></div>
+        <div class="field" style="flex:1;"><label>Capacity</label><input type="number" id="rCapacity" value="1"></div>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="rStatus"><option value="available">Available</option><option value="booked">Booked</option><option value="occupied">Occupied</option><option value="maintenance">Maintenance</option><option value="unlisted">Unlisted</option></select>
+      </div>
+      <div class="field"><label>Amenities (comma separated)</label><input type="text" id="rAmenities"></div>
+      <div class="field"><label>Image URL</label><input type="text" id="rImage" placeholder="https://..."></div>
+      <div class="flex gap-12" style="margin-top:10px;">
+        <button type="button" class="btn btn-outline btn-block" id="closeRoomModal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-block">Save room</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/core.js"></script>
+<script src="/js/admin-dashboard.js"></script>
+</body>
+</html>

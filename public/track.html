@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Booking — Hosteli Zetu</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .track-box { max-width: 520px; margin: 60px auto; }
+  .result-card { background:#fff; border:1px solid var(--line); border-radius: var(--r-lg); padding: 24px; margin-top:24px; }
+  .result-row { display:flex; justify-content:space-between; padding: 10px 0; border-bottom:1px solid var(--line); font-size:.88rem; }
+  .result-row:last-child { border-bottom:none; }
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="container">
+  <a href="/" class="brand"><span class="mark">HZ</span><div>Hosteli Zetu<small>Your campus home, sorted</small></div></a>
+  <div class="nav-links"><a href="/index.html#browse">Browse Hostels</a><a href="/track.html">Track Booking</a></div>
+  <a href="/admin-login.html" class="btn btn-dark btn-sm">Admin Login</a>
+</div></nav>
+
+<main class="container track-box">
+  <h1 style="font-size:1.7rem;text-align:center;">Track your booking</h1>
+  <p class="muted text-center">Enter the booking reference you received by email (e.g. HZ-A1B2C3D4).</p>
+  <form id="trackForm" class="flex gap-12" style="margin-top:20px;">
+    <input type="text" id="refInput" placeholder="HZ-XXXXXXXX" required style="flex:1;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--r-sm);font-family:var(--font-mono);text-transform:uppercase;">
+    <button class="btn btn-primary" type="submit">Track</button>
+  </form>
+  <div id="result"></div>
+</main>
+
+<script src="/js/core.js"></script>
+<script>
+qs('#trackForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const ref = qs('#refInput').value.trim().toUpperCase();
+  const resultBox = qs('#result');
+  resultBox.innerHTML = '<div class="card skeleton" style="height:160px;margin-top:24px;"></div>';
+  try {
+    const { booking } = await apiFetch(`/bookings/track/${ref}`);
+    resultBox.innerHTML = `
+      <div class="result-card">
+        <div class="flex-between"><h3 style="margin:0;">${booking.bookingRef}</h3><span class="status-pill ${booking.status}">${statusLabel(booking.status)}</span></div>
+        <div class="result-row"><span class="muted">Hostel</span><strong>${booking.hostel?.name || '—'}</strong></div>
+        <div class="result-row"><span class="muted">Room</span><strong>${booking.room?.title || '—'}</strong></div>
+        <div class="result-row"><span class="muted">Move-in date</span><strong>${fmtDate(booking.moveInDate)}</strong></div>
+        <div class="result-row"><span class="muted">Booking fee</span><strong>${fmtKES(booking.bookingFee)}</strong></div>
+        <div class="result-row"><span class="muted">Payment status</span><span class="status-pill ${booking.paymentStatus === 'paid' ? 'confirmed' : booking.paymentStatus}">${statusLabel(booking.paymentStatus)}</span></div>
+        ${booking.payment?.mpesaReceiptNumber ? `<div class="result-row"><span class="muted">M-Pesa Receipt</span><strong class="mono">${booking.payment.mpesaReceiptNumber}</strong></div>` : ''}
+        <div class="result-row"><span class="muted">Hostel contact</span><strong>${booking.hostel?.contact?.phone || '—'}</strong></div>
+      </div>`;
+  } catch (err) {
+    resultBox.innerHTML = `<div class="result-card text-center"><p class="muted">${err.message}</p></div>`;
+  }
+});
+</script>
+</body>
+</html>

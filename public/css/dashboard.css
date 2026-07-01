@@ -1,0 +1,114 @@
+/* =============================================================
+   HOSTELI ZETU — Dashboard layout (Admin & Super Admin)
+   ============================================================= */
+
+.dash {
+  display: grid; grid-template-columns: 264px 1fr; min-height: 100vh; background: var(--cream);
+}
+.dash-sidebar {
+  background: var(--forest-dark); color: rgba(255,255,255,.85); padding: 26px 18px;
+  display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.dash-sidebar .brand { color: #fff; padding: 0 8px 22px; }
+.dash-sidebar .brand small { color: rgba(255,255,255,.5); }
+.dash-nav-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.4); padding: 16px 12px 6px; font-weight: 700; }
+.dash-nav a {
+  display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: var(--r-sm);
+  font-size: .89rem; font-weight: 600; color: rgba(255,255,255,.72); transition: background .15s ease, color .15s ease;
+}
+.dash-nav a .ic { width: 18px; text-align: center; opacity: .85; }
+.dash-nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+.dash-nav a.active { background: rgba(232,163,61,.16); color: var(--gold-light); }
+.dash-sidebar .sidebar-footer { margin-top: auto; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.1); }
+
+.dash-main { padding: 0; min-width: 0; }
+.dash-topbar {
+  height: 76px; background: #fff; border-bottom: 1px solid var(--line); display: flex; align-items: center;
+  justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 20;
+}
+.dash-topbar h1 { font-size: 1.3rem; margin: 0; }
+.dash-content { padding: 28px 32px 60px; max-width: 1320px; }
+
+.user-chip { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; border-radius: 999px; background: var(--cream-dark); }
+.user-chip .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--gold); color: var(--forest-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; }
+.user-chip .name { font-size: .82rem; font-weight: 700; line-height: 1.1; }
+.user-chip .role { font-size: .68rem; color: var(--ink-soft); text-transform: capitalize; }
+
+/* Stat cards */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px; }
+@media (max-width: 1100px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .stat-grid { grid-template-columns: 1fr; } }
+.stat-card { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px; position: relative; overflow: hidden; }
+.stat-card .stat-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 14px; }
+.stat-card .stat-value { font-family: var(--font-display); font-size: 1.9rem; font-weight: 800; color: var(--forest-dark); }
+.stat-card .stat-label { font-size: .8rem; color: var(--ink-soft); font-weight: 600; margin-top: 2px; }
+.stat-card .stat-delta { font-size: .74rem; font-weight: 700; margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; }
+.stat-delta.up { color: var(--success); }
+.stat-delta.down { color: var(--danger); }
+.stat-icon.green { background: rgba(45,106,79,.12); color: var(--forest-light); }
+.stat-icon.gold { background: rgba(232,163,61,.18); color: #93640e; }
+.stat-icon.coral { background: rgba(231,111,81,.14); color: var(--coral); }
+.stat-icon.blue { background: rgba(64,110,142,.13); color: #406e8e; }
+
+/* Panels */
+.panel { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; margin-bottom: 24px; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
+.panel-head h3 { margin: 0; }
+.grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; }
+@media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table.dtable { width: 100%; border-collapse: collapse; font-size: .87rem; }
+table.dtable th { text-align: left; padding: 10px 14px; color: var(--ink-soft); font-weight: 700; font-size: .73rem; text-transform: uppercase; letter-spacing: .03em; border-bottom: 1.5px solid var(--line); white-space: nowrap; }
+table.dtable td { padding: 13px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.dtable tr:last-child td { border-bottom: none; }
+table.dtable tr:hover td { background: var(--cream); }
+
+.status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: .72rem; font-weight: 700; }
+.status-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.status-pill.published, .status-pill.confirmed, .status-pill.active, .status-pill.success, .status-pill.approved { background: rgba(45,106,79,.12); color: var(--success); }
+.status-pill.pending_review, .status-pill.pending, .status-pill.pending_payment { background: rgba(232,163,61,.18); color: #93640e; }
+.status-pill.suspended, .status-pill.cancelled, .status-pill.failed, .status-pill.rejected { background: rgba(200,85,61,.12); color: var(--danger); }
+.status-pill.draft { background: var(--cream-dark); color: var(--ink-soft); }
+
+/* Simple CSS bar chart for revenue trend (no external chart lib needed) */
+.bar-chart { display: flex; align-items: flex-end; gap: 14px; height: 180px; padding-top: 10px; }
+.bar-chart .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+.bar-chart .bar { width: 100%; max-width: 38px; border-radius: 8px 8px 4px 4px; background: linear-gradient(180deg, var(--gold-light), var(--gold)); position: relative; transition: filter .15s; min-height: 4px; }
+.bar-chart .bar:hover { filter: brightness(1.08); }
+.bar-chart .bar-label { font-size: .68rem; color: var(--ink-soft); font-weight: 700; }
+
+/* Donut for status mix */
+.donut-legend { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.donut-legend .item { display: flex; align-items: center; gap: 10px; font-size: .82rem; }
+.donut-legend .swatch { width: 10px; height: 10px; border-radius: 3px; }
+
+/* Hostel grid cards in super admin dashboard */
+.hostel-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.hostel-mini { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: #fff; }
+.hostel-mini .thumb { height: 110px; background: linear-gradient(135deg, var(--forest), var(--forest-light)); position: relative; }
+.hostel-mini .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.hostel-mini .thumb .rating-chip { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: .7rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+.hostel-mini .info { padding: 12px 14px; }
+.hostel-mini .info h4 { font-size: .92rem; margin: 0 0 2px; }
+.hostel-mini .info .uni { font-size: .76rem; color: var(--ink-soft); margin-bottom: 8px; }
+.hostel-mini .info .row { display: flex; justify-content: space-between; align-items: center; font-size: .76rem; }
+
+.empty-state { text-align: center; padding: 50px 20px; color: var(--ink-soft); }
+.empty-state .ic { font-size: 2.4rem; margin-bottom: 10px; }
+
+/* Mobile sidebar toggle */
+.dash-burger { display: none; background: none; border: none; font-size: 1.4rem; color: var(--forest-dark); }
+@media (max-width: 920px) {
+  .dash { grid-template-columns: 1fr; }
+  .dash-sidebar { position: fixed; left: 0; top: 0; width: 264px; z-index: 100; transform: translateX(-100%); transition: transform .2s ease; }
+  .dash-sidebar.open { transform: translateX(0); }
+  .dash-burger { display: block; }
+  .dash-content { padding: 20px 16px 50px; }
+  .dash-topbar { padding: 0 16px; }
+}
+
+.input-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.search-mini { display: flex; align-items: center; gap: 8px; background: var(--cream); border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; font-size: .85rem; min-width: 220px; }
+.search-mini input { border: none; background: transparent; outline: none; font-size: .85rem; flex: 1; }

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Room — Hosteli Zetu</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .room-gallery { display: flex; gap: 8px; overflow-x: auto; border-radius: var(--r-lg); }
+  .room-gallery img { height: 320px; min-width: 460px; object-fit: cover; border-radius: var(--r-lg); }
+  @media (max-width: 600px) { .room-gallery img { height: 220px; min-width: 280px; } }
+  .booking-card { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; position: sticky; top: 96px; }
+  .booking-card .price-big { font-family: var(--font-mono); font-size: 1.7rem; font-weight: 700; color: var(--forest-dark); }
+  .step { display: none; }
+  .step.active { display: block; }
+  .otp-inputs { display: flex; gap: 8px; justify-content: center; margin: 18px 0; }
+  .otp-inputs input { width: 44px; height: 52px; text-align: center; font-size: 1.3rem; font-family: var(--font-mono); border: 1.5px solid var(--line); border-radius: 10px; }
+  .otp-inputs input:focus { border-color: var(--forest); outline: none; }
+  .stk-wait { text-align: center; padding: 20px 0; }
+  .stk-wait .spinner { width: 52px; height: 52px; border-radius: 50%; border: 4px solid var(--cream-dark); border-top-color: var(--gold); animation: spin 1s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="brand"><span class="mark">HZ</span><div>Hosteli Zetu<small>Your campus home, sorted</small></div></a>
+    <div class="nav-links"><a href="/index.html#browse">Browse Hostels</a><a href="/track.html">Track Booking</a></div>
+    <a href="/admin-login.html" class="btn btn-dark btn-sm">Admin Login</a>
+  </div>
+</nav>
+
+<main class="container" style="padding-top:28px;padding-bottom:60px;" id="page">
+  <div class="card skeleton" style="height:340px;"></div>
+</main>
+
+<div class="modal-overlay" id="bookingModal" style="display:none;">
+  <div class="modal">
+    <!-- Step 1: contact details -->
+    <div class="step active" id="step1">
+      <h3>Reserve this room</h3>
+      <p class="muted" style="font-size:.86rem;">Enter your details — we'll send a quick verification code to your email.</p>
+      <form id="detailsForm">
+        <div class="field"><label>Full name</label><input type="text" id="fName" required></div>
+        <div class="field"><label>Email</label><input type="email" id="fEmail" required></div>
+        <div class="field"><label>Phone (for M-Pesa)</label><input type="tel" id="fPhone" placeholder="07XXXXXXXX" required></div>
+        <div class="field"><label>University</label><input type="text" id="fUniversity"></div>
+        <div class="field"><label>Move-in date</label><input type="date" id="fMoveIn" required></div>
+        <div class="flex gap-12" style="margin-top:18px;">
+          <button type="button" class="btn btn-outline btn-block" id="closeModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-block" id="continueBtn">Continue</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div class="step" id="step2">
+      <h3>Check your email</h3>
+      <p class="muted" style="font-size:.86rem;">We sent a 6-digit code to <strong id="otpEmailLabel"></strong>.</p>
+      <div class="otp-inputs">
+        <input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric">
+        <input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric">
+      </div>
+      <p class="error-text" id="otpError" style="display:none;text-align:center;color:var(--danger);font-size:.82rem;"></p>
+      <button class="btn btn-primary btn-block" id="verifyOtpBtn">Verify code</button>
+      <button class="btn btn-ghost btn-block btn-sm" id="resendOtpBtn" style="margin-top:8px;">Resend code</button>
+    </div>
+
+    <!-- Step 3: M-Pesa STK push -->
+    <div class="step" id="step3">
+      <div class="stk-wait">
+        <div class="spinner" id="stkSpinner"></div>
+        <h3 id="stkTitle">Check your phone</h3>
+        <p class="muted" id="stkMsg">Enter your M-Pesa PIN to complete the KES <span id="stkAmount"></span> booking fee.</p>
+      </div>
+    </div>
+
+    <!-- Step 4: success -->
+    <div class="step" id="step4">
+      <div class="text-center">
+        <div style="font-size:2.6rem;">🎉</div>
+        <h3>Booking confirmed!</h3>
+        <p class="muted">Your booking reference:</p>
+        <p class="mono" style="font-size:1.2rem;font-weight:700;color:var(--forest-dark);" id="bookingRefDisplay"></p>
+        <p class="muted" style="font-size:.85rem;">A confirmation has been emailed to you. Keep this reference to track your booking.</p>
+        <a href="/track.html" class="btn btn-primary btn-block">Track my booking</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/core.js"></script>
+<script src="/js/room.js"></script>
+</body>
+</html>
