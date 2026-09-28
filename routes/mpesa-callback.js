@@ -4,9 +4,7 @@ const Booking = require('../models/Booking');
 const Room = require('../models/Room');
 const Hostel = require('../models/Hostel');
 const Student = require('../models/Student');
-const { sendBookingConfirmationEmail, sendPaymentReceiptEmail } = require('../utils/email');
-const Transaction = require('../models/Transaction');
-const Lease = require('../models/Lease');
+const { sendBookingConfirmationEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -30,9 +28,6 @@ router.post('/callback', async (req, res) => {
       console.warn('[MPESA] Callback for unknown checkoutRequestId:', CheckoutRequestID);
       return;
     }
-
-    const alreadyProcessed = payment.status === 'success';
-    if (alreadyProcessed) return;
 
     payment.rawCallback = req.body;
     payment.resultCode = String(ResultCode);
@@ -58,55 +53,6 @@ router.post('/callback', async (req, res) => {
         await Room.findByIdAndUpdate(booking.room._id, { status: 'booked' });
         await Hostel.findByIdAndUpdate(booking.hostel._id, { $inc: { availableRooms: -1 } });
         await Student.findByIdAndUpdate(booking.student, { $inc: { bookingsCount: 1 } });
-
-        let transaction = await Transaction.findOne({ payment: payment._id });
-        const isNewTransaction = !transaction;
-        if (!transaction) {
-          transaction = await Transaction.create({
-            student: booking.student,
-            hostel: booking.hostel._id,
-            room: booking.room._id,
-            booking: booking._id,
-            payment: payment._id,
-            type: 'booking_fee',
-            direction: 'credit',
-            amount: payment.amount,
-            method: 'mpesa',
-            status: 'completed',
-            mpesaReceiptNumber: payment.mpesaReceiptNumber,
-            description: `Booking fee for ${booking.bookingRef}`,
-          });
-        }
-
-        await Lease.findOneAndUpdate(
-          { booking: booking._id },
-          {
-            $setOnInsert: {
-              student: booking.student,
-              hostel: booking.hostel._id,
-              room: booking.room._id,
-              booking: booking._id,
-              startDate: booking.moveInDate,
-              monthlyRent: booking.roomPriceSnapshot,
-              deposit: booking.room?.deposit || 0,
-              status: 'active',
-            }
-          },
-          { upsert: true }
-        );
-
-        if (isNewTransaction) sendPaymentReceiptEmail(booking.studentSnapshot.email, {
-          receipt: payment.mpesaReceiptNumber,
-          transactionRef: transaction.transactionRef,
-          bookingRef: booking.bookingRef,
-          studentName: booking.studentSnapshot.name,
-          email: booking.studentSnapshot.email,
-          hostelName: booking.hostel.name,
-          roomTitle: booking.room.title,
-          amount: payment.amount,
-          method: 'M-Pesa',
-          date: new Date().toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' }),
-        }).catch((e) => console.error('[EMAIL] payment receipt failed:', e.message));
 
         sendBookingConfirmationEmail(booking.studentSnapshot.email, {
           bookingRef: booking.bookingRef,

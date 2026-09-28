@@ -4,13 +4,10 @@ const Hostel = require('../models/Hostel');
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
 const { Review } = require('../models/misc');
-const { protectAdmin, requireRole, requirePermission, enforceTenantOwnership } = require('../middleware/auth');
-const Transaction = require('../models/Transaction');
-const Lease = require('../models/Lease');
-const { sendPaymentReceiptEmail } = require('../utils/email');
+const { protectAdmin, requireRole, enforceTenantOwnership } = require('../middleware/auth');
 
 const router = express.Router();
-router.use(protectAdmin, requireRole('tenant_admin', 'hostel_manager', 'accountant', 'receptionist', 'super_admin'));
+router.use(protectAdmin, requireRole('tenant_admin', 'super_admin'));
 
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -80,7 +77,7 @@ router.get('/hostels', async (req, res, next) => {
 
 // POST /api/admin/hostels — create a new hostel listing
 router.post(
-  '/hostels', requirePermission('hostels:manage'),
+  '/hostels',
   [
     body('name').trim().notEmpty(),
     body('university').trim().notEmpty(),
@@ -103,7 +100,7 @@ router.post(
 );
 
 // PUT /api/admin/hostels/:id
-router.put('/hostels/:id', requirePermission('hostels:manage'), enforceTenantOwnership, async (req, res, next) => {
+router.put('/hostels/:id', enforceTenantOwnership, async (req, res, next) => {
   try {
     const blockedFields = ['owner', 'status', 'verified', 'featured', 'ratingAvg', 'ratingCount'];
     blockedFields.forEach((f) => delete req.body[f]);
@@ -118,7 +115,7 @@ router.put('/hostels/:id', requirePermission('hostels:manage'), enforceTenantOwn
 /* ----------------------------------- Rooms ------------------------------------ */
 
 // GET /api/admin/hostels/:hostelId/rooms
-router.get('/hostels/:hostelId/rooms', requirePermission('rooms:view'), enforceTenantOwnership, async (req, res, next) => {
+router.get('/hostels/:hostelId/rooms', enforceTenantOwnership, async (req, res, next) => {
   try {
     const rooms = await Room.find({ hostel: req.params.hostelId }).sort({ createdAt: -1 });
     res.json({ success: true, rooms });
@@ -129,7 +126,7 @@ router.get('/hostels/:hostelId/rooms', requirePermission('rooms:view'), enforceT
 
 // POST /api/admin/hostels/:hostelId/rooms
 router.post(
-  '/hostels/:hostelId/rooms', requirePermission('rooms:manage'),
+  '/hostels/:hostelId/rooms',
   enforceTenantOwnership,
   [body('title').trim().notEmpty(), body('type').notEmpty(), body('price').isNumeric()],
   validate,
@@ -147,7 +144,7 @@ router.post(
 );
 
 // PUT /api/admin/rooms/:id
-router.put('/rooms/:id', requirePermission('rooms:manage'), async (req, res, next) => {
+router.put('/rooms/:id', async (req, res, next) => {
   try {
     const room = await Room.findById(req.params.id).populate('hostel');
     if (!room) return res.status(404).json({ success: false, message: 'Room not found.' });
@@ -175,7 +172,7 @@ router.put('/rooms/:id', requirePermission('rooms:manage'), async (req, res, nex
 });
 
 // DELETE /api/admin/rooms/:id
-router.delete('/rooms/:id', requirePermission('rooms:manage'), async (req, res, next) => {
+router.delete('/rooms/:id', async (req, res, next) => {
   try {
     const room = await Room.findById(req.params.id).populate('hostel');
     if (!room) return res.status(404).json({ success: false, message: 'Room not found.' });
@@ -217,7 +214,7 @@ router.get('/bookings', async (req, res, next) => {
 });
 
 // PUT /api/admin/bookings/:id/status
-router.put('/bookings/:id/status', requirePermission('bookings:manage'), async (req, res, next) => {
+router.put('/bookings/:id/status', async (req, res, next) => {
   try {
     const { status, cancelReason } = req.body;
     const booking = await Booking.findById(req.params.id).populate('hostel');
@@ -241,74 +238,6 @@ router.put('/bookings/:id/status', requirePermission('bookings:manage'), async (
   }
 });
 
-
-/* ----------------------------- Hostel operations ------------------------------ */
-router.get('/transactions', requirePermission('transactions:view'), async (req, res, next) => {
-  try {
-    const hostels = await Hostel.find(myHostelFilter(req)).select('_id');
-    const filter = { hostel: { $in: hostels.map(h => h._id) } };
-    if (req.query.status) filter.status = req.query.status;
-    if (req.query.type) filter.type = req.query.type;
-    const transactions = await Transaction.find(filter).sort({ createdAt:-1 }).limit(200)
-      .populate('student','name email phone admissionNo').populate('hostel','name').populate('room','title');
-    const summary = transactions.reduce((a,t)=>{ if(t.status==='completed') a.total += t.direction==='credit'?t.amount:-t.amount; return a; }, {total:0});
-    res.json({success:true, transactions, summary});
-  } catch(err){ next(err); }
-});
-
-router.post('/transactions/:id/email-receipt', requirePermission('transactions:view'), async (req,res,next)=>{
-  try {
-    const t=await Transaction.findById(req.params.id).populate('student','name email').populate('hostel','name').populate('room','title').populate('booking','bookingRef');
-    if(!t) return res.status(404).json({success:false,message:'Transaction not found.'});
-    if(!t.student?.email) return res.status(400).json({success:false,message:'This transaction has no registered student email.'});
-    await sendPaymentReceiptEmail(t.student.email,{receipt:t.mpesaReceiptNumber,transactionRef:t.transactionRef,bookingRef:t.booking?.bookingRef,studentName:t.student.name,email:t.student.email,hostelName:t.hostel?.name,roomTitle:t.room?.title,amount:t.amount,method:t.method,date:t.createdAt.toLocaleString('en-KE',{timeZone:'Africa/Nairobi'})});
-    res.json({success:true,message:`Receipt emailed to ${t.student.email}.`});
-  }catch(err){next(err);}
-});
-
-router.post('/transactions', requirePermission('transactions:manage'), async (req,res,next)=>{
-  try{
-    const {student,hostel,room,booking,type='rent',amount,method='mpesa',description,mpesaReceiptNumber}=req.body;
-    if(!student||!hostel||!amount) return res.status(400).json({success:false,message:'Student, hostel and amount are required.'});
-    const target=await Hostel.findById(hostel);
-    if(!target) return res.status(404).json({success:false,message:'Hostel not found.'});
-    if(req.admin.role!=='super_admin'&&target.owner.toString()!==req.admin._id.toString()&&!target.managers.some(m=>m.toString()===req.admin._id.toString())) return res.status(403).json({success:false,message:'Not authorized.'});
-    const t=await Transaction.create({student,hostel,room,booking,type,amount,method,status:'completed',mpesaReceiptNumber,description});
-    const populated=await Transaction.findById(t._id).populate('student','name email').populate('hostel','name').populate('room','title').populate('booking','bookingRef');
-    if(populated.student?.email) await sendPaymentReceiptEmail(populated.student.email,{receipt:populated.mpesaReceiptNumber,transactionRef:populated.transactionRef,bookingRef:populated.booking?.bookingRef,studentName:populated.student.name,email:populated.student.email,hostelName:populated.hostel?.name,roomTitle:populated.room?.title,amount:populated.amount,method:populated.method,date:populated.createdAt.toLocaleString('en-KE',{timeZone:'Africa/Nairobi'})});
-    res.status(201).json({success:true,transaction:populated,message:'Transaction recorded and receipt emailed.'});
-  }catch(err){next(err);}
-});
-
-router.get('/leases', requirePermission('leases:view'), async (req,res,next)=>{
-  try {
-    const hostels = await Hostel.find(myHostelFilter(req)).select('_id');
-    const leases = await Lease.find({hostel:{$in:hostels.map(h=>h._id)}}).sort({createdAt:-1}).limit(200)
-      .populate('student','name email phone admissionNo').populate('hostel','name').populate('room','title roomNumber price');
-    res.json({success:true, leases});
-  } catch(err){ next(err); }
-});
-
-router.post('/leases', requirePermission('leases:manage'), async (req,res,next)=>{
-  try {
-    const {student, hostel, room, startDate, endDate, monthlyRent, deposit, notes, booking} = req.body;
-    const target = await Hostel.findById(hostel);
-    if(!target) return res.status(404).json({success:false,message:'Hostel not found.'});
-    if(req.admin.role!=='super_admin' && target.owner.toString()!==req.admin._id.toString() && !target.managers.some(m=>m.toString()===req.admin._id.toString())) return res.status(403).json({success:false,message:'Not authorized.'});
-    const lease = await Lease.create({student,hostel,room,startDate,endDate,monthlyRent,deposit,notes,booking,status:'active'});
-    await Room.findByIdAndUpdate(room,{status:'occupied'});
-    res.status(201).json({success:true,lease});
-  } catch(err){ next(err); }
-});
-
-router.get('/residents', requirePermission('leases:view'), async (req,res,next)=>{
-  try {
-    const hostels=await Hostel.find(myHostelFilter(req)).select('_id');
-    const leases=await Lease.find({hostel:{$in:hostels.map(h=>h._id)},status:'active'}).populate('student','name email phone university admissionNo').populate('room','title roomNumber').populate('hostel','name');
-    res.json({success:true,residents:leases});
-  } catch(err){next(err);}
-});
-
 /* ---------------------------------- Reviews ------------------------------------ */
 
 // GET /api/admin/reviews
@@ -329,7 +258,7 @@ router.get('/reviews', async (req, res, next) => {
 });
 
 // PUT /api/admin/reviews/:id/moderate
-router.put('/reviews/:id/moderate', requirePermission('reviews:manage'), async (req, res, next) => {
+router.put('/reviews/:id/moderate', async (req, res, next) => {
   try {
     const { status, moderationNote } = req.body; // 'approved' | 'rejected'
     const review = await Review.findById(req.params.id).populate('hostel');

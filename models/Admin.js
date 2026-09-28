@@ -17,7 +17,7 @@ const adminSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ['super_admin', 'tenant_admin', 'hostel_manager', 'accountant', 'receptionist'],
+      enum: ['super_admin', 'tenant_admin'],
       default: 'tenant_admin',
     },
 
@@ -41,13 +41,6 @@ const adminSchema = new mongoose.Schema(
     passwordResetToken: { type: String, select: false },
     passwordResetExpires: { type: Date },
     twoFactorEnabled: { type: Boolean, default: false },
-
-    trustedDevices: [{
-      fingerprint: { type: String },
-      label: { type: String },
-      verifiedAt: { type: Date },
-      expiresAt: { type: Date },
-    }],
 
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
   },

@@ -1,31 +1,26 @@
-# Hosteli Zetu — secure accommodation operating system
+# HOSTELI ZETU — Fluent Secure Workspace
 
-A fresh replacement application built around a single authenticated workspace. There is no public admin link, no visible admin route in navigation, and role-specific capabilities are returned only after authentication.
+A new role-aware hostel operations platform for Kenya. The public interface exposes only a sign-in/workspace experience; management capabilities are resolved server-side after authentication.
 
-## Design
-- Microsoft Fluent 2-inspired layout and interaction patterns
-- Segoe UI system typography
-- Safaricom/M-Pesa green used as the primary action color
-- Responsive desktop/mobile workspace
-- No admin/superadmin links in the public UI
+## Core modules
+- Role-aware resident, reception, manager, accountant, owner and platform workspaces
+- Hostel / room / bed operational model
+- Invoices and payment intents
+- Verified-payment ledger model
+- Automated receipt architecture
+- Registered-email notifications
+- Trust & security center
+- Audit events
+- Microsoft Fluent-inspired responsive UI with Safaricom green
 
 ## Security model
-- HTTP-only signed session cookie
-- Short-lived JWT access session
-- Central role middleware
-- Organization scoping
-- Helmet CSP with `frame-ancestors: none`
-- Rate limiting
-- Mongo sanitization + HPP
-- Auditable actions
-- Payment idempotency indexes for M-Pesa receipt and checkout request IDs
-- Financial payments are not treated as verified merely because a staff member enters a receipt number
+The UI does not contain a public management link. This is not relied on as a security boundary: every protected API operation is authenticated and role-checked server-side. Property-scoped records should always be queried with the authenticated user's hostel scope.
 
 ## Environment
-Use the existing Vercel environment variables. Copy `.env.example` only for documentation. Do not commit real secret values.
-
-## First platform account
-The bootstrap endpoint is intentionally not linked anywhere and returns 404 unless the request includes the configured `SUPER_ADMIN_SETUP_KEY`. After first initialization, bootstrap is permanently disabled.
+Use the existing Vercel project variables. The source contains no production secret values. Important variables include MONGO_URI, CLIENT_URL, JWT_SECRET, JWT_EXPIRES_IN, COOKIE_SECRET, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM and all MPESA_* variables.
 
 ## Run
-`npm install && npm start`
+npm install
+npm start
+
+For Vercel, api/index.js is the serverless entrypoint.

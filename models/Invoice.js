@@ -1,3 +1,3 @@
 const mongoose=require('mongoose');
-const schema=new mongoose.Schema({organizationId:mongoose.Schema.Types.ObjectId,hostelId:mongoose.Schema.Types.ObjectId,userId:mongoose.Schema.Types.ObjectId,description:String,amount:{type:Number,min:0},paidAmount:{type:Number,default:0},status:{type:String,enum:['unpaid','partial','paid','void'],default:'unpaid'},dueDate:Date},{timestamps:true});
+const schema=new mongoose.Schema({number:{type:String,unique:true},hostelId:mongoose.Schema.Types.ObjectId,residentId:mongoose.Schema.Types.ObjectId,description:String,amount:Number,paid:{type:Number,default:0},status:{type:String,enum:['draft','issued','part_paid','paid','overdue','void'],default:'issued'},dueDate:Date},{timestamps:true});
 module.exports=mongoose.model('Invoice',schema);
