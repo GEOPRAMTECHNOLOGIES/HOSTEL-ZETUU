@@ -227,11 +227,11 @@ async function renderAdmins(root) {
     <div class="panel">
       <div class="panel-head"><h3>Tenant admins (hostel managers)</h3><button class="btn btn-primary btn-sm" id="addAdminBtn">+ Add admin</button></div>
       <div class="table-wrap"><table class="dtable">
-        <thead><tr><th>Name</th><th>Email</th><th>Hostels</th><th>Status</th><th>Joined</th><th></th></tr></thead>
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Hostels</th><th>Status</th><th>Joined</th><th></th></tr></thead>
         <tbody>${admins.map((a) => `
-          <tr><td>${a.name}</td><td>${a.email}</td><td>${(a.hostels||[]).map((h)=>h.name).join(', ')||'—'}</td>
+          <tr><td>${a.name}</td><td>${a.email}</td><td>${(a.role||'').replaceAll('_',' ')}</td><td>${(a.hostels||[]).map((h)=>h.name).join(', ')||'—'}</td>
           <td><span class="status-pill ${a.status}">${statusLabel(a.status)}</span></td><td>${fmtDate(a.createdAt)}</td>
-          <td>${a.status==='active' ? `<button class="btn btn-sm" style="color:var(--danger);" data-status="${a._id}|suspended">Suspend</button>` : `<button class="btn btn-sm btn-primary" data-status="${a._id}|active">Activate</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No tenant admins yet.</td></tr>'}</tbody>
+          <td>${a.status==='active' ? `<button class="btn btn-sm" style="color:var(--danger);" data-status="${a._id}|suspended">Suspend</button>` : `<button class="btn btn-sm btn-primary" data-status="${a._id}|active">Activate</button>`}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">No tenant admins yet.</td></tr>'}</tbody>
       </table></div>
     </div>
   `;
@@ -246,7 +246,7 @@ qs('#closeAdminModal').addEventListener('click', () => { qs('#adminModal').style
 qs('#adminForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
-    await apiFetch('/superadmin/admins', { method: 'POST', body: JSON.stringify({ name: qs('#aName').value, email: qs('#aEmail').value, phone: qs('#aPhone').value }) });
+    await apiFetch('/superadmin/admins', { method: 'POST', body: JSON.stringify({ name: qs('#aName').value, email: qs('#aEmail').value, phone: qs('#aPhone').value, role: qs('#aRole').value }) });
     toast('Tenant admin created — credentials emailed.', 'success');
     qs('#adminModal').style.display = 'none';
     e.target.reset();

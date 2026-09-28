@@ -76,6 +76,7 @@ app.use('/api/setup', require('./routes/setup'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/public', require('./routes/public'));
 app.use('/api/bookings', require('./routes/bookings'));
+app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/mpesa', require('./routes/mpesa-callback'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/superadmin', require('./routes/superadmin'));

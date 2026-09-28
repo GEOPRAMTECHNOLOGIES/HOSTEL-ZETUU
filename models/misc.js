@@ -31,7 +31,7 @@ const otpSchema = new mongoose.Schema(
     codeHash: { type: String, required: true }, // store hashed, never plain
     purpose: {
       type: String,
-      enum: ['login_verify', 'booking_verify', 'password_reset'],
+      enum: ['login_verify', 'booking_verify', 'password_reset', 'trust_device'],
       default: 'login_verify',
     },
     attempts: { type: Number, default: 0 },
@@ -95,8 +95,34 @@ const paymentSchema = new mongoose.Schema(
 );
 paymentSchema.index({ status: 1, createdAt: -1 });
 
+/* ------------------------------- Audit event -------------------------------- */
+const auditEventSchema = new mongoose.Schema({
+  actorAdmin: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', index: true },
+  student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', index: true },
+  hostel: { type: mongoose.Schema.Types.ObjectId, ref: 'Hostel', index: true },
+  action: { type: String, required: true, index: true },
+  entityType: String,
+  entityId: mongoose.Schema.Types.ObjectId,
+  ip: String,
+  userAgent: String,
+  metadata: mongoose.Schema.Types.Mixed,
+}, { timestamps: true });
+auditEventSchema.index({ hostel: 1, createdAt: -1 });
+
+/* ---------------------------------- Trust ----------------------------------- */
+const trustTokenSchema = new mongoose.Schema({
+  ownerType: { type: String, enum: ['student', 'admin'], required: true },
+  ownerId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+  fingerprint: { type: String, required: true },
+  label: String,
+  tokenHash: { type: String, required: true, unique: true },
+  expiresAt: { type: Date, required: true, index: { expires: 0 } },
+}, { timestamps: true });
+
 module.exports = {
   Review: mongoose.model('Review', reviewSchema),
+  AuditEvent: mongoose.model('AuditEvent', auditEventSchema),
+  TrustToken: mongoose.model('TrustToken', trustTokenSchema),
   Otp: mongoose.model('Otp', otpSchema),
   DeviceVerification: mongoose.model('DeviceVerification', deviceVerificationSchema),
   Payment: mongoose.model('Payment', paymentSchema),

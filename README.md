@@ -195,3 +195,23 @@ Put nginx in front of it using `deploy/nginx.conf.example` as a starting point (
 - [ ] First super admin created via `/api/setup/super-admin`, then treat `SUPER_ADMIN_SETUP_KEY` as compromised-if-leaked and rotate it
 - [ ] Regular MongoDB backups configured (Atlas does this automatically on paid tiers)
 
+
+## Hosteli Zetu 2.0 — finance, hostel operations & trust
+
+This build adds a tenant-aware hostel operations layer on top of the existing booking flow:
+
+- Student dashboard at `/student-dashboard.html` with bookings, active residence/leases and complete transaction history.
+- Hostel management dashboard sections for residents, leases, financial transactions and Trust & Security.
+- Role-aware staff accounts: `super_admin`, `tenant_admin`, `hostel_manager`, `accountant`, and `receptionist`.
+- M-Pesa success callbacks create an immutable-style transaction ledger record and an active lease record for confirmed bookings.
+- Successful payments automatically email the registered student email with a PDF receipt attachment. Safaricom callback retries are guarded so the same successful payment does not create duplicate transaction receipts.
+- Managers can record rent/deposit/utility/other transactions from the admin API; the registered student email receives the generated receipt automatically.
+- Authorized finance staff can resend a receipt from `/api/admin/transactions/:id/email-receipt`.
+- Student Trust & Devices uses email OTP and a 30-day trusted-device token.
+- Security remains driven by the existing `JWT_SECRET`, `JWT_EXPIRES_IN`, `COOKIE_SECRET`, secure cookies, login lockout, SMTP settings and M-Pesa Daraja settings.
+
+### Vercel environment variables
+
+No new secret is required for this module. The build uses the existing Vercel variables already configured for this project: `MONGO_URI`, `CLIENT_URL`, `MPESA_CALLBACK_URL`, `NODE_ENV`, `PORT`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `COOKIE_SECRET`, `SUPER_ADMIN_SETUP_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`, `MPESA_ENV`, `MPESA_ACCOUNT_TYPE`, `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, `MPESA_SHORTCODE`, `MPESA_TILL_NUMBER`, and `MPESA_PASSKEY`.
+
+For production, keep the real values in Vercel Project Environment Variables and do not commit them to the ZIP or repository.

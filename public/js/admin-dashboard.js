@@ -24,13 +24,16 @@ const views = {
   hostels: renderHostels,
   rooms: renderRooms,
   bookings: renderBookings,
+  residents: renderResidents,
+  transactions: renderTransactions,
+  trust: renderTrust,
   reviews: renderReviews,
   settings: renderSettings,
 };
 
 function setActiveNav(view) {
   qsa('.nav-link').forEach((a) => a.classList.toggle('active', a.dataset.view === view));
-  qs('#viewTitle').textContent = { overview: 'Dashboard', hostels: 'My Hostels', rooms: 'Rooms', bookings: 'Bookings', reviews: 'Reviews', settings: 'Settings' }[view];
+  qs('#viewTitle').textContent = { overview: 'Dashboard', hostels: 'My Hostels', rooms: 'Rooms', bookings: 'Bookings', residents: 'Residents', transactions: 'Transactions', trust: 'Trust & security', reviews: 'Reviews', settings: 'Settings' }[view];
   qs('#sidebar').classList.remove('open');
 }
 
@@ -243,6 +246,24 @@ async function renderBookings(root) {
     try { await apiFetch(`/admin/bookings/${b.dataset.cancel}/status`, { method: 'PUT', body: JSON.stringify({ status: 'cancelled', cancelReason: reason }) }); toast('Booking cancelled.', 'success'); navigate(); }
     catch (err) { toast(err.message, 'error'); }
   }));
+}
+
+
+/* ------------------------------- Residents -------------------------------- */
+async function renderResidents(root) {
+  const { residents } = await apiFetch('/admin/residents');
+  root.innerHTML = `<div class="panel fluent-card"><div class="panel-head"><div><h3>Residents & leases</h3><p class="muted">Live occupancy across hostels you manage.</p></div><span class="verified-badge">${residents.length} active</span></div><div class="table-wrap"><table class="dtable"><thead><tr><th>Resident</th><th>Hostel</th><th>Room</th><th>Monthly rent</th><th>Move in</th></tr></thead><tbody>${residents.map(r=>`<tr><td><strong>${r.student?.name||'—'}</strong><div class="muted">${r.student?.email||''}</div></td><td>${r.hostel?.name||'—'}</td><td>${r.room?.title||'—'}</td><td>${fmtKES(r.monthlyRent)}</td><td>${fmtDate(r.startDate)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No active residents.</td></tr>'}</tbody></table></div></div>`;
+}
+
+/* ------------------------------ Transactions ------------------------------ */
+async function renderTransactions(root) {
+  const { transactions, summary } = await apiFetch('/admin/transactions');
+  root.innerHTML = `<div class="stat-grid"><div class="stat-card fluent-card"><div class="stat-icon green">KSh</div><div class="stat-value">${fmtKES(summary.total)}</div><div class="stat-label">Net recorded credit</div></div><div class="stat-card fluent-card"><div class="stat-icon blue">✓</div><div class="stat-value">${transactions.length}</div><div class="stat-label">Transactions shown</div></div></div><div class="panel fluent-card"><div class="panel-head"><div><h3>Financial ledger</h3><p class="muted">Booking fees, rent, deposits and other recorded payments.</p></div></div><div class="table-wrap"><table class="dtable"><thead><tr><th>Reference</th><th>Student</th><th>Hostel</th><th>Type</th><th>Amount</th><th>M-Pesa</th><th>Date</th><th></th></tr></thead><tbody>${transactions.map(t=>`<tr><td class="mono">${t.transactionRef}</td><td>${t.student?.name||'—'}<div class="muted">${t.student?.email||''}</div></td><td>${t.hostel?.name||'—'}</td><td>${t.type.replace('_',' ')}</td><td><strong>${t.direction==='debit'?'-':''}${fmtKES(t.amount)}</strong></td><td class="mono">${t.mpesaReceiptNumber||'—'}</td><td>${fmtDate(t.createdAt)}</td><td><button class="btn btn-outline btn-sm" data-receipt="${t._id}">Email receipt</button></td></tr>`).join('')||'<tr><td colspan="8" class="muted">No transactions.</td></tr>'}</tbody></table></div></div>`;
+  qsa('[data-receipt]').forEach(b=>b.onclick=async()=>{try{const r=await apiFetch(`/admin/transactions/${b.dataset.receipt}/email-receipt`,{method:'POST'});toast(r.message,'success')}catch(e){toast(e.message,'error')}});
+}
+
+function renderTrust(root) {
+  root.innerHTML = `<div class="panel fluent-card"><div class="panel-head"><div><h3>Trust & security</h3><p class="muted">Hosteli Zetu uses verified sessions, role-based access and audit-friendly payment records.</p></div><span class="verified-badge">Protected</span></div><div class="security-grid"><div class="trust-card"><div class="trust-icon">✓</div><div><strong>Role-based access</strong><p class="muted">Your account is operating as <b>${(adminInfo?.role||'').replaceAll('_',' ')}</b>.</p></div></div><div class="trust-card"><div class="trust-icon">▣</div><div><strong>Verified payment trail</strong><p class="muted">Every successful M-Pesa payment creates a transaction ledger record and emailed receipt.</p></div></div><div class="trust-card"><div class="trust-icon">◉</div><div><strong>Session protection</strong><p class="muted">JWT expiry, secure cookies, login lockout and password-change invalidation are enabled.</p></div></div></div></div>`;
 }
 
 /* -------------------------------- Reviews ----------------------------------- */

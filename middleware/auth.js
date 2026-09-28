@@ -59,6 +59,20 @@ const requireRole = (...roles) => (req, res, next) => {
  * super_admin bypasses this check.
  * Expects :hostelId or :id (hostel) route param, or req.body.hostel.
  */
+const ROLE_PERMISSIONS = {
+  super_admin: ['*'],
+  tenant_admin: ['hostels:manage','rooms:manage','bookings:manage','transactions:view','transactions:manage','reviews:manage','leases:manage','staff:manage'],
+  hostel_manager: ['hostels:view','rooms:manage','bookings:manage','transactions:view','leases:manage','reviews:manage'],
+  accountant: ['hostels:view','transactions:view','transactions:manage','leases:view'],
+  receptionist: ['hostels:view','rooms:view','bookings:manage','leases:view'],
+};
+
+const requirePermission = (permission) => (req, res, next) => {
+  const permissions = ROLE_PERMISSIONS[req.admin?.role] || [];
+  if (!permissions.includes('*') && !permissions.includes(permission)) return res.status(403).json({ success:false, message:'Your role does not have permission for this action.' });
+  next();
+};
+
 const enforceTenantOwnership = async (req, res, next) => {
   try {
     if (req.admin.role === 'super_admin') return next();
@@ -87,4 +101,4 @@ const enforceTenantOwnership = async (req, res, next) => {
   }
 };
 
-module.exports = { protectAdmin, requireRole, enforceTenantOwnership };
+module.exports = { protectAdmin, requireRole, requirePermission, enforceTenantOwnership, ROLE_PERMISSIONS };

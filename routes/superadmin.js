@@ -163,7 +163,7 @@ router.put('/hostels/:id/feature', async (req, res, next) => {
 // GET /api/superadmin/admins
 router.get('/admins', async (req, res, next) => {
   try {
-    const admins = await Admin.find({ role: 'tenant_admin' }).populate('hostels', 'name status').sort({ createdAt: -1 });
+    const admins = await Admin.find({ role: { $ne: 'super_admin' } }).populate('hostels', 'name status').sort({ createdAt: -1 });
     res.json({ success: true, admins });
   } catch (err) {
     next(err);
@@ -181,12 +181,14 @@ router.post(
       if (existing) return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
 
       const tempPassword = randomPassword(12);
+      const allowedRoles = ['tenant_admin','hostel_manager','accountant','receptionist'];
+      const role = allowedRoles.includes(req.body.role) ? req.body.role : 'tenant_admin';
       const admin = await Admin.create({
         name: req.body.name,
         email: req.body.email,
         phone: req.body.phone,
         password: tempPassword,
-        role: 'tenant_admin',
+        role,
         status: 'active',
         createdBy: req.admin._id,
       });
@@ -205,6 +207,19 @@ router.post(
     }
   }
 );
+
+// PUT /api/superadmin/admins/:id/hostels — assign manager/staff to hostels
+router.put('/admins/:id/hostels', async (req,res,next)=>{
+  try {
+    const admin=await Admin.findById(req.params.id);
+    if(!admin) return res.status(404).json({success:false,message:'Admin not found.'});
+    const ids=Array.isArray(req.body.hostels)?req.body.hostels:[];
+    admin.hostels=ids; await admin.save();
+    await Hostel.updateMany({managers:admin._id},{ $pull:{managers:admin._id} });
+    if(ids.length) await Hostel.updateMany({_id:{$in:ids}},{$addToSet:{managers:admin._id}});
+    res.json({success:true,admin});
+  } catch(err){next(err);}
+});
 
 // PUT /api/superadmin/admins/:id/status — activate / suspend a tenant admin
 router.put('/admins/:id/status', [body('status').isIn(['active', 'suspended', 'pending'])], validate, async (req, res, next) => {

@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { makeReceiptPdf } = require('./receipt');
 
 let transporter;
 const getTransporter = () => {
@@ -79,6 +80,31 @@ const sendBookingConfirmationEmail = async (toEmail, booking) => {
   });
 };
 
+
+const sendPaymentReceiptEmail = async (toEmail, paymentData) => {
+  if (!toEmail) return;
+  const pdf = makeReceiptPdf(paymentData);
+  const html = baseWrapper(
+    'Payment received',
+    `
+      <p style="color:#444;font-size:14px;">Hello ${paymentData.studentName || 'there'}, your payment has been received and recorded.</p>
+      <div style="background:#f4fbf7;border:1px solid #d6efe2;border-radius:10px;padding:16px;margin:16px 0;">
+        <p style="margin:4px 0;color:#0b7a4b;font-weight:700;">KES ${Number(paymentData.amount || 0).toLocaleString('en-KE')}</p>
+        <p style="margin:4px 0;color:#555;font-size:13px;">M-Pesa receipt: <strong>${paymentData.receipt || 'Pending'}</strong></p>
+        <p style="margin:4px 0;color:#555;font-size:13px;">Transaction: <strong>${paymentData.transactionRef || '-'}</strong></p>
+      </div>
+      <p style="color:#666;font-size:12px;">Your PDF receipt is attached to this email. You can also view this transaction from your Hosteli Zetu dashboard.</p>
+    `
+  );
+  await getTransporter().sendMail({
+    from: process.env.EMAIL_FROM,
+    to: toEmail,
+    subject: `Payment receipt — ${paymentData.receipt || paymentData.transactionRef || 'Hosteli Zetu'}`,
+    html,
+    attachments: [{ filename: `Hosteli-Zetu-Receipt-${paymentData.transactionRef || 'payment'}.pdf`, content: pdf, contentType: 'application/pdf' }],
+  });
+};
+
 const sendAdminWelcomeEmail = async (toEmail, name, tempPassword) => {
   const html = baseWrapper(
     `Welcome to Hosteli Zetu, ${name}`,
@@ -132,6 +158,7 @@ const sendAdminApprovedEmail = async (toEmail, name) => {
 module.exports = {
   sendOtpEmail,
   sendBookingConfirmationEmail,
+  sendPaymentReceiptEmail,
   sendAdminWelcomeEmail,
   sendAdminRegistrationReceivedEmail,
   sendAdminApprovedEmail,

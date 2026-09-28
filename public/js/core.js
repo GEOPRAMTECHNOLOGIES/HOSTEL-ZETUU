@@ -4,7 +4,7 @@ const API = '/api';
 async function apiFetch(path, opts = {}) {
   const token = localStorage.getItem('hz_admin_token') || localStorage.getItem('hz_student_token');
   const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (token && !headers.Authorization) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetch(`${API}${path}`, { ...opts, headers, credentials: 'include' });
   let data;
